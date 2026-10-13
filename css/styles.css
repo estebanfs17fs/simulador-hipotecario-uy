@@ -1,0 +1,89 @@
+:root {
+  --uy-blue: #0d6efd;
+  --uy-green: #198754;
+  --uy-orange: #fd7e14;
+}
+
+body {
+  background: #f8f9fa;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Formulario */
+.form-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+
+.input-group-text {
+  min-width: 52px;
+  justify-content: center;
+}
+
+/* Tarjetas de escenario */
+.scenario-card {
+  border-radius: 10px;
+  transition: transform .15s, box-shadow .15s;
+}
+
+.scenario-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.12);
+}
+
+.card-header {
+  border-radius: 9px 9px 0 0 !important;
+  font-weight: 600;
+  font-size: .95rem;
+}
+
+/* Resumen */
+#summaryBox {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #eee;
+  border-radius: 12px;
+}
+
+/* Override Bootstrap CSS variables so table text is visible on dark background */
+#summaryBox .table {
+  --bs-table-color: #fff;
+  --bs-table-bg: transparent;
+  --bs-table-border-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+#summaryBox th {
+  color: #adb5bd !important;
+  font-weight: 400;
+  font-size: .85rem;
+}
+
+#summaryBox td {
+  color: #fff !important;
+  font-weight: 600;
+}
+
+/* Gráfica */
+#chartContainer {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  padding: 20px;
+}
+
+/* Spinner cotización */
+#rateStatus {
+  font-size: .82rem;
+  min-height: 1.4em;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .scenario-card { margin-bottom: 1rem; }
+  #summaryBox td { font-size: .9rem; }
+}

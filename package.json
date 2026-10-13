@@ -1,0 +1,15 @@
+{
+  "name": "simulador-hipotecario-uruguay",
+  "version": "1.0.0",
+  "description": "Simulador de créditos hipotecarios para Uruguay",
+  "scripts": {
+    "test": "jest --coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {}
+  }
+}
