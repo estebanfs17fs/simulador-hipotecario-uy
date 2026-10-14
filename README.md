@@ -37,6 +37,7 @@ La página lo busca en `http://localhost:3000`. Si lo publicás en otro lado, de
 | Mercado Libre | API oficial (`api.mercadolibre.com`), con `MELI_ACCESS_TOKEN` de una app creada en developers.mercadolibre.com.uy | Tiene API pública y su robots.txt no permite bots genéricos. Sin token la fuente figura como "No configurada". |
 | Gallito | Lectura del listado HTML, hasta 3 páginas por búsqueda, una a la vez, con pausa y caché de 15 minutos | Su robots.txt permite todo y no publica términos que lo prohíban. |
 | InfoCasas | Solo un enlace a su buscador | Sus términos (cláusula 16.2) prohíben robots, spiders y scrapers sin autorización escrita. |
+| RE/MAX | Solo un enlace a su buscador | Su robots.txt y sus términos no lo prohíben, pero el listado se carga con JavaScript desde una API interna sin documentar. |
 
 Para sumar otra inmobiliaria se agrega un archivo en `server/sources/` con `nombre`, `sitio` y `search(criterios)`, después de revisar su robots.txt y sus términos.
 

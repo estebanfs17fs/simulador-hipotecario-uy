@@ -8,6 +8,7 @@ const SOURCES = [
   require('./sources/mercadolibre'),
   require('./sources/gallito'),
   require('./sources/infocasas'),
+  require('./sources/remax'),
 ];
 
 function createApp({ sources = SOURCES, allowedOrigin = process.env.ALLOWED_ORIGIN || '*' } = {}) {

@@ -6,6 +6,7 @@ const { clearCache } = require('../http');
 const gallito = require('../sources/gallito');
 const mercadolibre = require('../sources/mercadolibre');
 const infocasas = require('../sources/infocasas');
+const remax = require('../sources/remax');
 const { parseCriteria } = require('../search');
 
 const html = fs.readFileSync(path.join(__dirname, 'fixtures/gallito-listado.html'), 'utf8');
@@ -96,4 +97,11 @@ test('mercadolibre: usa la API con token, categoría y departamento', async () =
 test('infocasas: no lee el sitio, solo devuelve el enlace al buscador', async () => {
   const c = parseCriteria({ precioMax: 100000, departamento: 'Maldonado', localidades: 'Punta del Este' });
   assert.deepEqual(await infocasas.search(c), { avisos: [], enlace: 'https://www.infocasas.com.uy/venta/casas/maldonado/punta-del-este' });
+});
+
+test('remax: enlace por tipo y ciudad (la localidad si hay una sola, si no el departamento)', async () => {
+  const una = parseCriteria({ precioMax: 100000, departamento: 'Maldonado', localidades: 'Punta del Este', tipo: 'apartamentos' });
+  assert.deepEqual(await remax.search(una), { avisos: [], enlace: 'https://www.remax.com.uy/apartamentos-en-venta-en-punta-del-este' });
+  const varias = parseCriteria({ precioMax: 100000, departamento: 'Montevideo', localidades: 'Pocitos,Prado' });
+  assert.equal(remax.buildLink(varias), 'https://www.remax.com.uy/casas-en-venta-en-montevideo');
 });
