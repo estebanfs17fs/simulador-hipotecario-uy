@@ -2,12 +2,34 @@
 
 let exchangeRate = null;
 
+const MAX_YEARS_LIMIT = 40;
+const MAX_RATE_LIMIT = 30;
+
+const SCENARIOS = {
+  s1: {
+    title: 'Cuota Mínima — Plazo Extendido',
+    color: 'primary',
+    desc: 'El plazo más largo cuya cuota no supera tu cuota mínima.',
+  },
+  s2: {
+    title: 'Cuota Máxima — Plazo Mínimo',
+    color: 'success',
+    desc: 'El plazo más corto cuya cuota no supera tu cuota máxima. Es el que menos intereses paga.',
+  },
+  s3: {
+    title: 'Escenario Óptimo — Equilibrio',
+    color: 'warning',
+    desc: 'El plazo más corto con una cuota hasta la mitad de tu rango: menos intereses sin llegar al tope del presupuesto.',
+  },
+};
+
 // ─── Inicialización ───────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
   initValidation();
-  await loadExchangeRate();
+  initCurrencyToggle();
   document.getElementById('calcForm').addEventListener('submit', onCalculate);
+  await loadExchangeRate();
 });
 
 async function loadExchangeRate() {
@@ -22,139 +44,183 @@ async function loadExchangeRate() {
   if (rate !== null) {
     exchangeRate = rate;
     rateInput.value = rate.toFixed(2);
-    rateStatus.innerHTML = `<span class="text-success">✓ Cotización actualizada (BCU/Open ER)</span>`;
-    rateInput.disabled = false;
+    rateStatus.innerHTML = '<span class="text-success">✓ Cotización de referencia del mercado (open.er-api.com). No es la oficial del BCU; podés editarla.</span>';
   } else {
-    rateStatus.innerHTML = `<span class="text-warning">⚠ API no disponible — ingresá la cotización manualmente</span>`;
-    rateInput.disabled = false;
+    rateStatus.innerHTML = '<span class="text-warning">⚠ No se pudo obtener la cotización — ingresala manualmente.</span>';
     rateInput.focus();
   }
+  rateInput.disabled = false;
+  validateAll();
 
   rateInput.addEventListener('input', () => {
     exchangeRate = parseFloat(rateInput.value) || null;
   });
 }
 
+function getLoanCurrency() {
+  return document.querySelector('input[name="loanCurrency"]:checked').value;
+}
+
+function initCurrencyToggle() {
+  document.querySelectorAll('input[name="loanCurrency"]').forEach(el =>
+    el.addEventListener('change', () => {
+      document.getElementById('uiValueGroup').classList.toggle('d-none', getLoanCurrency() !== 'UI');
+      validateAll();
+    })
+  );
+}
+
 // ─── Cálculo principal ────────────────────────────────────────────────────────
 
 function onCalculate(e) {
   e.preventDefault();
+  if (!validateAll()) return;
 
-  const inputs = getInputs();
-  if (!inputs) return;
+  const { price, rate, downPayment, minYears, maxYears, minPayment, maxPayment, xRate, currency, uiValue } = getInputs();
+  const principalUSD = price - downPayment;
+  const { principal, unitValueUYU } = toLoanCurrency(principalUSD, currency, xRate, uiValue);
 
-  const { price, rate, downPayment, minYears, maxYears, minPayment, maxPayment, xRate } = inputs;
-  const principal = price - downPayment;
+  const s1 = findScenarioMinQuota(principal, rate, minPayment, unitValueUYU, minYears, maxYears);
+  const s2 = findScenarioMaxQuota(principal, rate, maxPayment, unitValueUYU, minYears, maxYears);
+  const s3 = findOptimalScenario(principal, rate, minPayment, maxPayment, unitValueUYU, minYears, maxYears);
 
-  if (principal <= 0) {
-    showGlobalError('El aporte inicial debe ser menor al precio de la propiedad.');
-    return;
-  }
+  const infeasible = {
+    s1: explainInfeasible(principal, rate, minPayment, unitValueUYU, maxYears),
+    s2: explainInfeasible(principal, rate, maxPayment, unitValueUYU, maxYears),
+    s3: explainInfeasible(principal, rate, (minPayment + maxPayment) / 2, unitValueUYU, maxYears),
+  };
 
-  const s1 = findScenarioMinQuota(principal, rate, minPayment, xRate, minYears, maxYears);
-  const s2 = findScenarioMaxQuota(principal, rate, maxPayment, xRate, minYears, maxYears);
-  const s3 = findOptimalScenario(principal, rate, minPayment, maxPayment, xRate, minYears, maxYears);
+  renderSummary(price, downPayment, principalUSD, xRate, currency, principal);
+  renderScenario('s1', s1, infeasible.s1, 'tu cuota mínima', currency);
+  renderScenario('s2', s2, infeasible.s2, 'tu cuota máxima', currency);
+  renderScenario('s3', s3, infeasible.s3, 'la cuota de equilibrio (mitad de tu rango)', currency);
 
-  renderSummary(price, downPayment, principal, xRate);
-  renderScenario('s1', s1, 'Cuota Mínima — Plazo Extendido', 'primary');
-  renderScenario('s2', s2, 'Cuota Máxima — Plazo Mínimo', 'success');
-  renderScenario('s3', s3, 'Escenario Óptimo', 'warning');
-
-  const chartData = generateChartData(principal, [rate * 0.8, rate, rate * 1.2].map(r => +r.toFixed(2)), minYears, maxYears, xRate);
-  renderChart(chartData);
+  const rates = [rate * 0.8, rate, rate * 1.2].map(r => +r.toFixed(2));
+  renderChart(generateChartData(principal, rates, minYears, maxYears, unitValueUYU));
 
   document.getElementById('results').classList.remove('d-none');
   document.getElementById('placeholder').classList.add('d-none');
   document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
 }
 
-function getInputs() {
-  const xRate = parseFloat(document.getElementById('exchangeRate').value);
-  const price = parseFloat(document.getElementById('propertyPrice').value);
-  const downPayment = parseFloat(document.getElementById('downPayment').value);
-  const rate = parseFloat(document.getElementById('interestRate').value);
-  const minYears = parseInt(document.getElementById('minYears').value);
-  const maxYears = parseInt(document.getElementById('maxYears').value);
-  const minPayment = parseFloat(document.getElementById('minPayment').value);
-  const maxPayment = parseFloat(document.getElementById('maxPayment').value);
+function readNumber(id) {
+  const raw = document.getElementById(id).value;
+  return raw === '' ? NaN : Number(raw);
+}
 
-  if ([xRate, price, downPayment, rate, minYears, maxYears, minPayment, maxPayment].some(v => isNaN(v) || v < 0)) {
-    showGlobalError('Completá todos los campos con valores válidos.');
-    return null;
-  }
-  return { price, rate, downPayment, minYears, maxYears, minPayment, maxPayment, xRate };
+function getInputs() {
+  return {
+    xRate: readNumber('exchangeRate'),
+    price: readNumber('propertyPrice'),
+    downPayment: readNumber('downPayment'),
+    rate: readNumber('interestRate'),
+    minYears: readNumber('minYears'),
+    maxYears: readNumber('maxYears'),
+    minPayment: readNumber('minPayment'),
+    maxPayment: readNumber('maxPayment'),
+    currency: getLoanCurrency(),
+    uiValue: readNumber('uiValue'),
+  };
 }
 
 // ─── Renderizado ─────────────────────────────────────────────────────────────
 
-function renderSummary(price, downPayment, principal, xRate) {
+function renderSummary(price, downPayment, principalUSD, xRate, currency, principal) {
   document.getElementById('summaryPrice').textContent = formatUSD(price) + ' / ' + formatUYU(convertUSDtoUYU(price, xRate));
   document.getElementById('summaryDown').textContent = formatUSD(downPayment) + ' / ' + formatUYU(convertUSDtoUYU(downPayment, xRate));
-  document.getElementById('summaryLoan').textContent = formatUSD(principal) + ' / ' + formatUYU(convertUSDtoUYU(principal, xRate));
+  let loan = formatUSD(principalUSD) + ' / ' + formatUYU(convertUSDtoUYU(principalUSD, xRate));
+  if (currency === 'UI') loan += ' / ' + formatUI(principal);
+  document.getElementById('summaryLoan').textContent = loan;
 }
 
-function renderScenario(id, result, title, color) {
+function renderScenario(id, result, infeasible, budgetLabel, currency) {
+  const { title, color, desc } = SCENARIOS[id];
   const card = document.getElementById(id);
   card.querySelector('.card-title').textContent = title;
-  card.className = `card h-100 border-${color}`;
+  card.querySelector('.scenario-desc').textContent = desc;
+  card.className = `card h-100 scenario-card border-${color}`;
   card.querySelector('.card-header').className = `card-header bg-${color} ${color === 'warning' ? 'text-dark' : 'text-white'}`;
 
   if (!result) {
-    card.querySelector('.scenario-body').innerHTML =
-      `<div class="alert alert-danger mb-0">No es posible financiar el préstamo con estos parámetros.</div>`;
+    const msg = infeasible
+      ? `Con el plazo máximo de ${formatYears(infeasible.maxYears)} la cuota sería ${formatUYU(infeasible.neededUYU)}, ` +
+        `${formatUYU(infeasible.shortfallUYU)} más que ${budgetLabel} (${formatUYU(infeasible.budgetUYU)}). ` +
+        'Probá con un plazo máximo mayor, más aporte inicial o una cuota más alta.'
+      : 'No es posible financiar el préstamo con estos parámetros.';
+    card.querySelector('.scenario-body').innerHTML = `<div class="alert alert-danger small mb-0"></div>`;
+    card.querySelector('.scenario-body .alert').textContent = msg;
     return;
   }
 
+  const fmt = amount => formatLoanCurrency(amount, currency);
+  const uyuNote = currency === 'UI' ? ' (valor de hoy)' : '';
   card.querySelector('.scenario-body').innerHTML = `
     <table class="table table-sm mb-0">
       <tbody>
         <tr><th>Plazo</th><td>${formatYears(result.years)}</td></tr>
-        <tr><th>Cuota mensual</th><td>${formatUSD(result.monthlyPaymentUSD)}<br><small class="text-muted">${formatUYU(result.monthlyPaymentUYU)}</small></td></tr>
-        <tr><th>Total intereses</th><td>${formatUSD(result.totalInterestUSD)}<br><small class="text-muted">${formatUYU(result.totalInterestUYU)}</small></td></tr>
-        <tr class="table-${color === 'warning' ? 'warning' : color === 'success' ? 'success' : 'primary'}">
-          <th>Total a pagar</th><td>${formatUSD(result.totalPaymentUSD)}<br><small>${formatUYU(result.totalPaymentUYU)}</small></td>
+        <tr><th>Cuota mensual</th><td>${fmt(result.monthlyPayment)}<br><small class="text-muted">${formatUYU(result.monthlyPaymentUYU)}${uyuNote}</small></td></tr>
+        <tr><th>Total intereses</th><td>${fmt(result.totalInterest)}<br><small class="text-muted">${formatUYU(result.totalInterestUYU)}${uyuNote}</small></td></tr>
+        <tr class="table-${color}">
+          <th>Total a pagar</th><td>${fmt(result.totalPayment)}<br><small>${formatUYU(result.totalPaymentUYU)}${uyuNote}</small></td>
         </tr>
       </tbody>
     </table>`;
 }
 
-function showGlobalError(msg) {
-  const el = document.getElementById('globalError');
-  el.textContent = msg;
-  el.classList.remove('d-none');
-  setTimeout(() => el.classList.add('d-none'), 5000);
-}
-
 // ─── Validación en tiempo real ────────────────────────────────────────────────
 
 function initValidation() {
-  const fields = ['propertyPrice', 'downPayment', 'exchangeRate', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment'];
+  const fields = ['propertyPrice', 'downPayment', 'exchangeRate', 'uiValue', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment'];
   fields.forEach(id => document.getElementById(id).addEventListener('input', validateAll));
+  validateAll();
 }
 
+/**
+ * Marca los campos inválidos y habilita "Calcular" solo si todo está completo y es coherente.
+ * Un campo vacío no se marca en rojo, pero mantiene el botón deshabilitado.
+ */
 function validateAll() {
-  const price = parseFloat(document.getElementById('propertyPrice').value) || 0;
-  const down = parseFloat(document.getElementById('downPayment').value) || 0;
-  const minY = parseInt(document.getElementById('minYears').value) || 0;
-  const maxY = parseInt(document.getElementById('maxYears').value) || 0;
-  const minP = parseFloat(document.getElementById('minPayment').value) || 0;
-  const maxP = parseFloat(document.getElementById('maxPayment').value) || 0;
+  const v = getInputs();
+  const filled = n => !isNaN(n);
+  const isInt = n => Number.isInteger(n);
 
-  setFieldError('downPayment', down >= price && price > 0, 'Debe ser menor al precio de la propiedad.');
-  setFieldError('maxYears', maxY <= minY && minY > 0, 'Debe ser mayor al plazo mínimo.');
-  setFieldError('maxPayment', maxP <= minP && minP > 0, 'Debe ser mayor a la cuota mínima.');
+  const checks = [
+    ['propertyPrice', filled(v.price) && v.price <= 0, 'Debe ser mayor a 0.'],
+    ['downPayment', filled(v.downPayment) && v.downPayment < 0, 'No puede ser negativo.'],
+    ['downPayment', filled(v.downPayment) && filled(v.price) && v.price > 0 && v.downPayment >= v.price, 'Debe ser menor al precio de la propiedad.'],
+    ['exchangeRate', filled(v.xRate) && v.xRate <= 0, 'Debe ser mayor a 0.'],
+    ['uiValue', v.currency === 'UI' && filled(v.uiValue) && v.uiValue <= 0, 'Debe ser mayor a 0.'],
+    ['interestRate', filled(v.rate) && (v.rate < 0 || v.rate > MAX_RATE_LIMIT), `Debe estar entre 0 y ${MAX_RATE_LIMIT} %.`],
+    ['minYears', filled(v.minYears) && (!isInt(v.minYears) || v.minYears < 1), 'Debe ser un número entero de al menos 1 año.'],
+    ['maxYears', filled(v.maxYears) && (!isInt(v.maxYears) || v.maxYears > MAX_YEARS_LIMIT), `Debe ser un número entero de hasta ${MAX_YEARS_LIMIT} años.`],
+    ['maxYears', filled(v.maxYears) && filled(v.minYears) && v.minYears >= 1 && v.maxYears <= v.minYears, 'Debe ser mayor al plazo mínimo.'],
+    ['minPayment', filled(v.minPayment) && v.minPayment <= 0, 'Debe ser mayor a 0.'],
+    ['maxPayment', filled(v.maxPayment) && filled(v.minPayment) && v.minPayment > 0 && v.maxPayment <= v.minPayment, 'Debe ser mayor a la cuota mínima.'],
+  ];
 
-  const hasError = document.querySelectorAll('.is-invalid').length > 0;
-  document.getElementById('btnCalcular').disabled = hasError;
+  const errors = {};
+  checks.forEach(([id, failed, msg]) => {
+    if (failed && !errors[id]) errors[id] = msg;
+  });
+
+  ['propertyPrice', 'downPayment', 'exchangeRate', 'uiValue', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment']
+    .forEach(id => setFieldError(id, errors[id]));
+
+  const required = [v.price, v.downPayment, v.xRate, v.rate, v.minYears, v.maxYears, v.minPayment, v.maxPayment];
+  if (v.currency === 'UI') required.push(v.uiValue);
+  const complete = required.every(filled);
+  const valid = complete && Object.keys(errors).length === 0;
+
+  document.getElementById('btnCalcular').disabled = !valid;
+  document.getElementById('formHint').textContent = !complete
+    ? 'Completá todos los campos para calcular.'
+    : valid ? '' : 'Corregí los campos marcados en rojo.';
+  return valid;
 }
 
-function setFieldError(id, condition, msg) {
+function setFieldError(id, msg) {
   const el = document.getElementById(id);
-  const fb = el.nextElementSibling;
-  if (condition) {
-    el.classList.add('is-invalid');
-    if (fb && fb.classList.contains('invalid-feedback')) fb.textContent = msg;
-  } else {
-    el.classList.remove('is-invalid');
-  }
+  const fb = el.parentElement.querySelector('.invalid-feedback');
+  el.classList.toggle('is-invalid', Boolean(msg));
+  if (fb) fb.textContent = msg || '';
 }

@@ -23,6 +23,14 @@ function formatUSD(amount) {
   return 'US$ ' + amount.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function formatUI(amount) {
+  return 'UI ' + amount.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatLoanCurrency(amount, currency) {
+  return currency === 'UI' ? formatUI(amount) : formatUSD(amount);
+}
+
 function formatYears(years) {
   return years === 1 ? '1 año' : `${years} años`;
 }

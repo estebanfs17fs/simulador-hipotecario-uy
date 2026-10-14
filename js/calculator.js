@@ -29,19 +29,21 @@ function calculateTotalInterest(principal, monthlyPayment, years) {
   return Math.max(0, monthlyPayment * years * 12 - principal);
 }
 
+/**
+ * Arma un ScenarioResult. Los montos sin sufijo están en la moneda del préstamo
+ * (USD o UI); `exchangeRate` son los pesos que vale una unidad de esa moneda.
+ */
 function _buildResult(principal, annualRate, years, exchangeRate) {
-  const monthlyPaymentUSD = calculateMonthlyPayment(principal, annualRate, years);
-  const monthlyPaymentUYU = convertUSDtoUYU(monthlyPaymentUSD, exchangeRate);
-  const totalInterestUSD = calculateTotalInterest(principal, monthlyPaymentUSD, years);
-  const totalInterestUYU = convertUSDtoUYU(totalInterestUSD, exchangeRate);
+  const monthlyPayment = calculateMonthlyPayment(principal, annualRate, years);
+  const totalInterest = calculateTotalInterest(principal, monthlyPayment, years);
   return {
     years,
-    monthlyPaymentUSD,
-    monthlyPaymentUYU,
-    totalInterestUSD,
-    totalInterestUYU,
-    totalPaymentUSD: principal + totalInterestUSD,
-    totalPaymentUYU: convertUSDtoUYU(principal + totalInterestUSD, exchangeRate),
+    monthlyPayment,
+    monthlyPaymentUYU: convertUSDtoUYU(monthlyPayment, exchangeRate),
+    totalInterest,
+    totalInterestUYU: convertUSDtoUYU(totalInterest, exchangeRate),
+    totalPayment: principal + totalInterest,
+    totalPaymentUYU: convertUSDtoUYU(principal + totalInterest, exchangeRate),
   };
 }
 
@@ -50,10 +52,10 @@ function _buildResult(principal, annualRate, years, exchangeRate) {
  * dentro del rango donde la cuota calculada no supere dicho mínimo.
  */
 function findScenarioMinQuota(principal, annualRate, minPaymentUYU, exchangeRate, minYears, maxYears) {
-  const maxAffordableUSD = convertUYUtoUSD(minPaymentUYU, exchangeRate);
+  const maxAffordable = convertUYUtoUSD(minPaymentUYU, exchangeRate);
   for (let year = maxYears; year >= minYears; year--) {
     const cuota = calculateMonthlyPayment(principal, annualRate, year);
-    if (cuota <= maxAffordableUSD) {
+    if (cuota <= maxAffordable) {
       return _buildResult(principal, annualRate, year, exchangeRate);
     }
   }
@@ -65,10 +67,10 @@ function findScenarioMinQuota(principal, annualRate, minPaymentUYU, exchangeRate
  * dentro del rango donde la cuota calculada no supere dicho máximo.
  */
 function findScenarioMaxQuota(principal, annualRate, maxPaymentUYU, exchangeRate, minYears, maxYears) {
-  const maxAffordableUSD = convertUYUtoUSD(maxPaymentUYU, exchangeRate);
+  const maxAffordable = convertUYUtoUSD(maxPaymentUYU, exchangeRate);
   for (let year = minYears; year <= maxYears; year++) {
     const cuota = calculateMonthlyPayment(principal, annualRate, year);
-    if (cuota <= maxAffordableUSD) {
+    if (cuota <= maxAffordable) {
       return _buildResult(principal, annualRate, year, exchangeRate);
     }
   }
@@ -76,34 +78,37 @@ function findScenarioMaxQuota(principal, annualRate, maxPaymentUYU, exchangeRate
 }
 
 /**
- * Escenario 3: punto óptimo que minimiza intereses respetando el presupuesto.
- * Plazo objetivo = minYears + floor((maxYears - minYears) / 3).
- * Si la cuota requerida para ese plazo no cabe en el presupuesto, escala al escenario 2.
+ * Escenario 3: equilibrio entre el presupuesto mínimo y máximo.
+ * Toma como tope la cuota del punto medio del rango [mínima, máxima] y busca el
+ * plazo más corto cuya cuota no lo supere. Al ser el plazo más corto posible con
+ * ese tope, es el que minimiza los intereses dejando margen en el presupuesto.
+ * Si la cuota del plazo mínimo ya queda por debajo del tope, usa el plazo mínimo.
  */
 function findOptimalScenario(principal, annualRate, minPaymentUYU, maxPaymentUYU, exchangeRate, minYears, maxYears) {
-  const targetYears = minYears + Math.floor((maxYears - minYears) / 3);
-  const requiredUSD = calculateMonthlyPayment(principal, annualRate, targetYears);
-  const requiredUYU = convertUSDtoUYU(requiredUSD, exchangeRate);
+  const midPaymentUYU = (minPaymentUYU + maxPaymentUYU) / 2;
+  return findScenarioMaxQuota(principal, annualRate, midPaymentUYU, exchangeRate, minYears, maxYears);
+}
 
-  if (requiredUYU >= minPaymentUYU && requiredUYU <= maxPaymentUYU) {
-    return _buildResult(principal, annualRate, targetYears, exchangeRate);
+/**
+ * Explica por qué un escenario no es viable (CA-04).
+ * Retorna null si el presupuesto alcanza dentro del rango de plazos.
+ */
+function explainInfeasible(principal, annualRate, budgetUYU, exchangeRate, maxYears) {
+  const neededUYU = convertUSDtoUYU(calculateMonthlyPayment(principal, annualRate, maxYears), exchangeRate);
+  if (neededUYU <= budgetUYU) return null;
+  return { maxYears, neededUYU, budgetUYU, shortfallUYU: neededUYU - budgetUYU };
+}
+
+/**
+ * Pasa el préstamo de USD a la moneda en que se otorga.
+ * USD: queda igual. UI: USD → UYU con la cotización y UYU → UI con el valor de la UI.
+ * Retorna también `unitValueUYU`, los pesos que vale una unidad de esa moneda hoy.
+ */
+function toLoanCurrency(principalUSD, currency, exchangeRate, uiValue) {
+  if (currency === 'UI') {
+    return { principal: principalUSD * exchangeRate / uiValue, unitValueUYU: uiValue };
   }
-
-  if (requiredUYU < minPaymentUYU) {
-    // El plazo objetivo paga demasiado rápido → buscar un plazo mayor donde la cuota sea ≥ minPaymentUYU
-    for (let year = targetYears + 1; year <= maxYears; year++) {
-      const cuota = calculateMonthlyPayment(principal, annualRate, year);
-      const cuotaUYU = convertUSDtoUYU(cuota, exchangeRate);
-      if (cuotaUYU >= minPaymentUYU && cuotaUYU <= maxPaymentUYU) {
-        return _buildResult(principal, annualRate, year, exchangeRate);
-      }
-    }
-    // Si ningún año dentro del rango cabe entre [min, max], usar el plazo objetivo igual
-    return _buildResult(principal, annualRate, targetYears, exchangeRate);
-  }
-
-  // requiredUYU > maxPaymentUYU → el plan óptimo no alcanza; degradar a escenario 2
-  return findScenarioMaxQuota(principal, annualRate, maxPaymentUYU, exchangeRate, minYears, maxYears);
+  return { principal: principalUSD, unitValueUYU: exchangeRate };
 }
 
 /**
@@ -138,6 +143,8 @@ if (typeof module !== 'undefined' && module.exports) {
     findScenarioMinQuota,
     findScenarioMaxQuota,
     findOptimalScenario,
+    explainInfeasible,
+    toLoanCurrency,
     generateChartData,
   };
 }

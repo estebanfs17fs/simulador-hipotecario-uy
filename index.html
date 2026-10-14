@@ -18,8 +18,6 @@
 
   <div class="container pb-5">
 
-    <!-- Error global -->
-    <div id="globalError" class="alert alert-danger d-none" role="alert"></div>
 
     <div class="row g-4">
 
@@ -58,10 +56,35 @@
                 </label>
                 <div class="input-group">
                   <span class="input-group-text">$</span>
-                  <input type="number" id="exchangeRate" class="form-control" placeholder="42.00" min="1" step="0.01" required />
+                  <input type="number" id="exchangeRate" class="form-control" placeholder="40.00" min="0.01" step="0.01" required />
                   <div class="invalid-feedback"></div>
                 </div>
                 <div id="rateStatus" class="mt-1"></div>
+              </div>
+
+              <!-- Moneda del préstamo -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold d-block">Moneda del préstamo</label>
+                <div class="btn-group w-100" role="group" aria-label="Moneda del préstamo">
+                  <input type="radio" class="btn-check" name="loanCurrency" id="currencyUSD" value="USD" checked />
+                  <label class="btn btn-outline-secondary" for="currencyUSD">Dólares (US$)</label>
+                  <input type="radio" class="btn-check" name="loanCurrency" id="currencyUI" value="UI" />
+                  <label class="btn btn-outline-secondary" for="currencyUI">Unidades Indexadas (UI)</label>
+                </div>
+              </div>
+
+              <!-- Valor de la UI -->
+              <div id="uiValueGroup" class="mb-3 d-none">
+                <label class="form-label fw-semibold" for="uiValue">
+                  Valor de la UI hoy
+                  <small class="fw-normal text-muted">(UYU por UI)</small>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input type="number" id="uiValue" class="form-control" placeholder="6.40" min="0.0001" step="0.0001" />
+                  <div class="invalid-feedback"></div>
+                </div>
+                <small class="text-muted">Lo publica el <a href="https://www.ine.gub.uy/unidad-indexada" target="_blank" rel="noopener">INE</a>. La cuota en pesos sube con la inflación porque la UI se ajusta a diario.</small>
               </div>
 
               <!-- Tasa de interés -->
@@ -70,7 +93,7 @@
                   Tasa de interés anual (TNA)
                 </label>
                 <div class="input-group">
-                  <input type="number" id="interestRate" class="form-control" value="3.75" min="0" step="0.01" required />
+                  <input type="number" id="interestRate" class="form-control" value="3.75" min="0" max="30" step="0.01" required />
                   <span class="input-group-text">%</span>
                   <div class="invalid-feedback"></div>
                 </div>
@@ -120,7 +143,8 @@
                 </div>
               </div>
 
-              <button id="btnCalcular" type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+              <p id="formHint" class="small text-muted mb-2">Completá todos los campos para calcular.</p>
+              <button id="btnCalcular" type="submit" class="btn btn-primary w-100 py-2 fw-semibold" disabled>
                 Calcular escenarios
               </button>
 
@@ -162,7 +186,10 @@
                 <div class="card-header bg-primary text-white">
                   <span class="card-title"></span>
                 </div>
-                <div class="card-body p-2 scenario-body"></div>
+                <div class="card-body p-2">
+                  <p class="scenario-desc small text-muted mb-2"></p>
+                  <div class="scenario-body"></div>
+                </div>
               </div>
             </div>
 
@@ -171,7 +198,10 @@
                 <div class="card-header bg-success text-white">
                   <span class="card-title"></span>
                 </div>
-                <div class="card-body p-2 scenario-body"></div>
+                <div class="card-body p-2">
+                  <p class="scenario-desc small text-muted mb-2"></p>
+                  <div class="scenario-body"></div>
+                </div>
               </div>
             </div>
 
@@ -180,7 +210,10 @@
                 <div class="card-header bg-warning text-dark">
                   <span class="card-title"></span>
                 </div>
-                <div class="card-body p-2 scenario-body"></div>
+                <div class="card-body p-2">
+                  <p class="scenario-desc small text-muted mb-2"></p>
+                  <div class="scenario-body"></div>
+                </div>
               </div>
             </div>
 

@@ -6,6 +6,8 @@ const {
   findScenarioMinQuota,
   findScenarioMaxQuota,
   findOptimalScenario,
+  explainInfeasible,
+  toLoanCurrency,
   generateChartData,
 } = require('../js/calculator');
 
@@ -156,8 +158,8 @@ describe('findOptimalScenario', () => {
     const s2 = findScenarioMaxQuota(100000, 3.75, 50000, EXCHANGE_RATE, 5, 30);
     const s3 = findOptimalScenario(100000, 3.75, 25000, 50000, EXCHANGE_RATE, 5, 30);
     if (s1 && s2 && s3) {
-      expect(s1.totalInterestUSD).toBeGreaterThanOrEqual(s3.totalInterestUSD - 1);
-      expect(s3.totalInterestUSD).toBeGreaterThanOrEqual(s2.totalInterestUSD - 1);
+      expect(s1.totalInterest).toBeGreaterThanOrEqual(s3.totalInterest - 1);
+      expect(s3.totalInterest).toBeGreaterThanOrEqual(s2.totalInterest - 1);
     }
   });
 
@@ -167,6 +169,68 @@ describe('findOptimalScenario', () => {
       expect(result.monthlyPaymentUYU).toBeGreaterThanOrEqual(24999);
       expect(result.monthlyPaymentUYU).toBeLessThanOrEqual(50001);
     }
+  });
+});
+
+describe('findOptimalScenario — equilibrio', () => {
+  test('la cuota no supera el punto medio del presupuesto', () => {
+    const result = findOptimalScenario(100000, 3.75, 25000, 50000, EXCHANGE_RATE, 5, 30);
+    expect(result.monthlyPaymentUYU).toBeLessThanOrEqual(37500 + 1);
+  });
+
+  test('es el plazo más corto con cuota ≤ punto medio', () => {
+    const result = findOptimalScenario(100000, 3.75, 25000, 50000, EXCHANGE_RATE, 5, 30);
+    const unAnioMenos = calculateMonthlyPayment(100000, 3.75, result.years - 1) * EXCHANGE_RATE;
+    expect(unAnioMenos).toBeGreaterThan(37500);
+  });
+
+  test('queda estrictamente entre los otros dos escenarios cuando el rango lo permite', () => {
+    const s1 = findScenarioMinQuota(100000, 3.75, 25000, EXCHANGE_RATE, 5, 30);
+    const s2 = findScenarioMaxQuota(100000, 3.75, 50000, EXCHANGE_RATE, 5, 30);
+    const s3 = findOptimalScenario(100000, 3.75, 25000, 50000, EXCHANGE_RATE, 5, 30);
+    expect(s3.years).toBeLessThan(s1.years);
+    expect(s3.years).toBeGreaterThan(s2.years);
+  });
+
+  test('retorna null si ni con el plazo máximo la cuota entra en el presupuesto', () => {
+    expect(findOptimalScenario(100000, 3.75, 500, 1000, EXCHANGE_RATE, 5, 30)).toBeNull();
+  });
+});
+
+// ─── Mensajes de inviabilidad (CA-04) ────────────────────────────────────────
+
+describe('explainInfeasible', () => {
+  test('retorna null si el presupuesto alcanza', () => {
+    expect(explainInfeasible(100000, 3.75, 30000, EXCHANGE_RATE, 30)).toBeNull();
+  });
+
+  test('indica la cuota necesaria con el plazo máximo y cuánto falta', () => {
+    const info = explainInfeasible(100000, 3.75, 10000, EXCHANGE_RATE, 30);
+    expect(info.maxYears).toBe(30);
+    expect(info.neededUYU).toBeCloseTo(463.12 * EXCHANGE_RATE, -1);
+    expect(info.shortfallUYU).toBeCloseTo(info.neededUYU - 10000, 5);
+  });
+});
+
+// ─── Moneda del préstamo ─────────────────────────────────────────────────────
+
+describe('toLoanCurrency', () => {
+  test('USD: el préstamo no cambia y la unidad vale la cotización', () => {
+    expect(toLoanCurrency(100000, 'USD', 42, 6.5)).toEqual({ principal: 100000, unitValueUYU: 42 });
+  });
+
+  test('UI: convierte USD → UYU → UI', () => {
+    const { principal, unitValueUYU } = toLoanCurrency(100000, 'UI', 42, 6);
+    expect(principal).toBeCloseTo(700000, 5);
+    expect(unitValueUYU).toBe(6);
+  });
+
+  test('UI: la cuota en pesos coincide con la del préstamo en USD a tasa igual', () => {
+    const ui = toLoanCurrency(100000, 'UI', 42, 6);
+    const s = findScenarioMaxQuota(ui.principal, 3.75, 50000, ui.unitValueUYU, 5, 30);
+    const usd = findScenarioMaxQuota(100000, 3.75, 50000, 42, 5, 30);
+    expect(s.years).toBe(usd.years);
+    expect(s.monthlyPaymentUYU).toBeCloseTo(usd.monthlyPaymentUYU, 5);
   });
 });
 

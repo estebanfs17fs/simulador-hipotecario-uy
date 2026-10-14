@@ -56,7 +56,7 @@ calculateTotalInterest(principal: number, monthlyPayment: number, years: number)
 **Fórmula:** `totalInterest = monthlyPayment * years * 12 - principal`
 
 **Criterios de aceptación:**
-- `calculateTotalInterest(100000, 590.49, 20)` ≈ `41717.60` (tolerancia ±1)
+- `calculateTotalInterest(100000, 592.89, 20)` ≈ `42293.60` (tolerancia ±1), usando la cuota de CA-01
 - Siempre ≥ 0
 
 ---
@@ -106,7 +106,7 @@ findScenarioMaxQuota(
 
 ---
 
-### 2.6 Escenario 3 — Óptimo (Eficiencia Financiera)
+### 2.6 Escenario 3 — Óptimo (Equilibrio)
 
 ```js
 findOptimalScenario(
@@ -121,13 +121,33 @@ findOptimalScenario(
 ```
 
 **Lógica:**
-1. Calcular plazo objetivo: `targetYears = minYears + Math.floor((maxYears - minYears) / 3)`
-2. Calcular la cuota necesaria para ese plazo: `requiredPaymentUSD = calculateMonthlyPayment(principal, annualRate, targetYears)`
-3. Convertir a UYU: `requiredPaymentUYU = requiredPaymentUSD * exchangeRate`
-4. Si `requiredPaymentUYU` está dentro de `[minPaymentUYU, maxPaymentUYU]` → usar ese plazo
-5. Si `requiredPaymentUYU < minPaymentUYU` → incrementar el plazo hacia `maxYears` hasta que la cuota sea ≥ `minPaymentUYU` (sin exceder `maxPaymentUYU`)
-6. Si `requiredPaymentUYU > maxPaymentUYU` → degradar al escenario 2 (usar `findScenarioMaxQuota`)
-7. Si ningún escenario es posible → retornar `null`
+1. Calcular la cuota de equilibrio: `midPaymentUYU = (minPaymentUYU + maxPaymentUYU) / 2`
+2. Retornar `findScenarioMaxQuota(principal, annualRate, midPaymentUYU, exchangeRate, minYears, maxYears)`: el plazo más corto cuya cuota no supera la de equilibrio
+3. Si ningún plazo es viable → retornar `null`
+
+**Por qué:** el plazo más corto es siempre el que menos intereses paga, así que minimizar intereses sin más condiciones da el mismo resultado que el escenario 2. El escenario óptimo minimiza los intereses dejando margen: no pasa de la mitad del rango de cuota.
+
+---
+
+### 2.6.1 Explicación de inviabilidad (CA-04)
+
+```js
+explainInfeasible(principal, annualRate, budgetUYU, exchangeRate, maxYears): Infeasible | null
+```
+- Calcula la cuota en UYU con `maxYears`. Si es ≤ `budgetUYU` retorna `null`.
+- Si no, retorna `{ maxYears, neededUYU, budgetUYU, shortfallUYU }` para mostrar cuánto falta.
+
+---
+
+### 2.6.2 Moneda del préstamo (USD o UI)
+
+```js
+toLoanCurrency(principalUSD, currency: 'USD' | 'UI', exchangeRate, uiValue): { principal, unitValueUYU }
+```
+- `USD`: `principal = principalUSD`, `unitValueUYU = exchangeRate`
+- `UI`: `principal = principalUSD * exchangeRate / uiValue`, `unitValueUYU = uiValue`
+- Todas las funciones de escenarios reciben `unitValueUYU` como `exchangeRate`, por lo que trabajan igual en USD o en UI.
+- En UI la cuota en pesos se muestra al valor de la UI de hoy; en la realidad sube con la inflación.
 
 ---
 
@@ -136,11 +156,11 @@ findOptimalScenario(
 ```js
 {
   years: number,            // Plazo en años
-  monthlyPaymentUSD: number,  // Cuota en USD
+  monthlyPayment: number,     // Cuota en la moneda del préstamo (USD o UI)
   monthlyPaymentUYU: number,  // Cuota en UYU
-  totalInterestUSD: number,   // Total intereses en USD
+  totalInterest: number,      // Total intereses en la moneda del préstamo
   totalInterestUYU: number,   // Total intereses en UYU
-  totalPaymentUSD: number,    // Principal + intereses en USD
+  totalPayment: number,       // Principal + intereses en la moneda del préstamo
   totalPaymentUYU: number     // Principal + intereses en UYU
 }
 ```
@@ -175,12 +195,14 @@ fetchExchangeRate(): Promise<number | null>
 - Extrae el campo `rates.UYU`
 - Si la petición falla o el campo no existe → retorna `null`
 - Timeout implícito vía `AbortController` a 5 segundos
+- Es una cotización de referencia del mercado, no la oficial del BCU; la interfaz lo indica y permite editarla
 
 ### 3.2 Formateo de moneda
 
 ```js
 formatUYU(amount: number): string   // Ej: "$ 25.430,50"
 formatUSD(amount: number): string   // Ej: "US$ 1.234,56"
+formatUI(amount: number): string    // Ej: "UI 1.234,56"
 ```
 - Separador de miles: `.`
 - Separador decimal: `,`
@@ -196,24 +218,28 @@ formatUSD(amount: number): string   // Ej: "US$ 1.234,56"
 | Precio de la propiedad (USD) | number | > 0 |
 | Cotización del dólar (UYU) | number | > 0, editable si API falla |
 | Aporte inicial (USD) | number | ≥ 0 y < precio propiedad |
-| Tasa de interés anual (%) | number | ≥ 0, default 3.75 |
-| Plazo mínimo (años) | number | ≥ 1 |
-| Plazo máximo (años) | number | > plazo mínimo, ≤ 40 |
+| Moneda del préstamo | USD / UI | default USD |
+| Valor de la UI (UYU) | number | > 0, solo si la moneda es UI |
+| Tasa de interés anual (%) | number | entre 0 y 30, default 3.75 |
+| Plazo mínimo (años) | number | entero ≥ 1 |
+| Plazo máximo (años) | number | entero > plazo mínimo, ≤ 40 |
 | Cuota mínima mensual (UYU) | number | > 0 |
 | Cuota máxima mensual (UYU) | number | > cuota mínima |
 
 ### 4.2 Outputs
-- **Resumen General:** Precio casa, aporte, préstamo en USD y UYU
-- **Tarjeta Escenario 1 (azul):** Plazo, cuota USD/UYU, intereses, total
-- **Tarjeta Escenario 2 (verde):** Plazo, cuota USD/UYU, intereses, total
-- **Tarjeta Escenario 3 (naranja):** Plazo, cuota USD/UYU, intereses, total
+- **Resumen General:** Precio casa, aporte, préstamo en USD y UYU (y en UI si corresponde)
+- **Tarjeta Escenario 1 (azul):** Plazo, cuota en moneda del préstamo y UYU, intereses, total
+- **Tarjeta Escenario 2 (verde):** Plazo, cuota en moneda del préstamo y UYU, intereses, total
+- **Tarjeta Escenario 3 (naranja):** Plazo, cuota en moneda del préstamo y UYU, intereses, total
 - **Gráfica Chart.js:** Líneas de cuota (UYU) vs años, una por cada tasa
 
 ### 4.3 Comportamiento
 - Al cargar la página: intentar obtener cotización automáticamente
 - Cotización: mostrar indicador de carga, luego el valor o habilitarla para edición manual
 - Validaciones en tiempo real (input events)
-- El botón "Calcular" queda deshabilitado si hay errores de validación
+- El botón "Calcular" queda deshabilitado si falta algún campo o hay errores de validación
+- Si un escenario no es viable se muestra la cuota necesaria con el plazo máximo y cuánto falta (CA-04)
+- Si Chart.js no carga, los escenarios se muestran igual
 
 ---
 
