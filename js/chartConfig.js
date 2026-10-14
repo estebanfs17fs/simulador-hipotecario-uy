@@ -1,6 +1,11 @@
 let hipotecaChart = null;
 
 function renderChart(chartData, canvasId = 'hipotecaChart') {
+  // Si Chart.js no cargó (sin conexión al CDN) se muestran igual los escenarios.
+  if (typeof Chart === 'undefined') {
+    document.getElementById('chartContainer').textContent = 'No se pudo cargar la gráfica (sin conexión a Chart.js).';
+    return;
+  }
   const ctx = document.getElementById(canvasId).getContext('2d');
   if (hipotecaChart) hipotecaChart.destroy();
 
