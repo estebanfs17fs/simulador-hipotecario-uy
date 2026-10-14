@@ -8,6 +8,8 @@ const {
   findOptimalScenario,
   explainInfeasible,
   toLoanCurrency,
+  calculateMaxPrincipal,
+  calculateMaxPropertyPrice,
   generateChartData,
 } = require('../js/calculator');
 
@@ -247,5 +249,33 @@ describe('generateChartData', () => {
     const data = generateChartData(100000, [3.75], 10, 30, EXCHANGE_RATE);
     const values = data.datasets[0].data;
     expect(values[0]).toBeGreaterThan(values[values.length - 1]);
+  });
+});
+
+// ─── Precio máximo para buscar propiedades ───────────────────────────────────
+
+describe('calculateMaxPrincipal', () => {
+  test('es la inversa de la cuota: 592.89 a 3.75% y 20 años → ≈ 100.000', () => {
+    expect(calculateMaxPrincipal(592.89, 3.75, 20)).toBeCloseTo(100000, -1);
+  });
+  test('tasa 0: cuota × cantidad de cuotas', () => {
+    expect(calculateMaxPrincipal(500, 0, 10)).toBe(60000);
+  });
+  test('cuota o plazo 0 → 0', () => {
+    expect(calculateMaxPrincipal(0, 3.75, 20)).toBe(0);
+    expect(calculateMaxPrincipal(500, 3.75, 0)).toBe(0);
+  });
+});
+
+describe('calculateMaxPropertyPrice', () => {
+  test('USD: aporte + capital que paga la cuota máxima al plazo máximo', () => {
+    const cuotaUYU = calculateMonthlyPayment(100000, 3.75, 20) * EXCHANGE_RATE;
+    expect(calculateMaxPropertyPrice(30000, cuotaUYU, 3.75, 20, EXCHANGE_RATE, EXCHANGE_RATE)).toBeCloseTo(130000, 0);
+  });
+  test('UI: convierte el capital de UI a dólares', () => {
+    const uiValue = 6;
+    const principalUI = 100000 * EXCHANGE_RATE / uiValue;
+    const cuotaUYU = calculateMonthlyPayment(principalUI, 3.75, 20) * uiValue;
+    expect(calculateMaxPropertyPrice(30000, cuotaUYU, 3.75, 20, uiValue, EXCHANGE_RATE)).toBeCloseTo(130000, 0);
   });
 });

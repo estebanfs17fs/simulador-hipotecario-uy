@@ -98,6 +98,8 @@ function onCalculate(e) {
   const rates = [rate * 0.8, rate, rate * 1.2].map(r => +r.toFixed(2));
   renderChart(generateChartData(principal, rates, minYears, maxYears, unitValueUYU));
 
+  showPropertySearch(calculateMaxPropertyPrice(downPayment, maxPayment, rate, maxYears, unitValueUYU, xRate));
+
   document.getElementById('results').classList.remove('d-none');
   document.getElementById('placeholder').classList.add('d-none');
   document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
