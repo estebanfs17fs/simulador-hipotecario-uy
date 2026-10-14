@@ -254,3 +254,30 @@ formatUI(amount: number): string    // Ej: "UI 1.234,56"
 | CA-05 | La cotización se muestra automáticamente y es editable en caso de fallo de API |
 | CA-06 | La página es responsive (mobile ≥ 320px) |
 | CA-07 | `npm test` pasa sin errores |
+
+---
+
+## Búsqueda de propiedades
+
+### Precio máximo sugerido (`js/calculator.js`)
+
+```js
+calculateMaxPrincipal(monthlyPayment, annualRate, years): number
+calculateMaxPropertyPrice(downPaymentUSD, maxPaymentUYU, annualRate, maxYears, unitValueUYU, exchangeRate): number
+```
+- `calculateMaxPrincipal` es la inversa de la cuota: `P = M * [(1+r)^n - 1] / [r(1+r)^n]`; con tasa 0, `P = M * n`.
+- El precio sugerido es `aporte + capital que paga la cuota máxima al plazo máximo`, pasado a USD.
+- `calculateMaxPrincipal(592.89, 3.75, 20)` ≈ `100000`.
+
+### Criterios (`GET /api/buscar`)
+
+| Parámetro | Regla |
+|---|---|
+| `precioMax` | > 0, en USD |
+| `tolerancia` | 0 a 50 (%), 10 por defecto. Rango buscado: `precioMax × (1 ± tolerancia/100)` |
+| `dormitorios` | entero ≥ 0 (0 = cualquiera), mínimo |
+| `departamento` | uno de los 19 de `js/localidades.js` |
+| `localidades` | lista separada por comas, del departamento elegido; vacía = todo el departamento |
+| `tipo` | `casas`, `apartamentos` o `ambos` |
+
+Un dato inválido responde 400 con el motivo. La respuesta trae `resultados` (solo USD, dentro del rango, ordenados por precio, sin URLs repetidas) y `fuentes` con el estado de cada portal: `ok`, `enlace`, `no-configurada` o `error`. Una fuente que falla no corta la búsqueda.

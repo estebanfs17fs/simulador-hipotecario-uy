@@ -112,6 +112,30 @@ function toLoanCurrency(principalUSD, currency, exchangeRate, uiValue) {
 }
 
 /**
+ * Inversa de la cuota (sistema francés): el capital máximo que se paga con una
+ * cuota mensual dada. P = M * [(1+r)^n - 1] / [r(1+r)^n]
+ */
+function calculateMaxPrincipal(monthlyPayment, annualRate, years) {
+  if (monthlyPayment <= 0 || years <= 0) return 0;
+  const n = years * 12;
+  if (annualRate === 0) return monthlyPayment * n;
+  const r = annualRate / 100 / 12;
+  const factor = Math.pow(1 + r, n);
+  return monthlyPayment * (factor - 1) / (r * factor);
+}
+
+/**
+ * Precio máximo de propiedad (USD) que se puede comprar con el aporte inicial y
+ * la cuota máxima en pesos, al plazo máximo. Es el tope sugerido para buscar casas.
+ * `unitValueUYU` son los pesos que vale una unidad de la moneda del préstamo y
+ * `exchangeRate` los pesos por dólar.
+ */
+function calculateMaxPropertyPrice(downPaymentUSD, maxPaymentUYU, annualRate, maxYears, unitValueUYU, exchangeRate) {
+  const principal = calculateMaxPrincipal(maxPaymentUYU / unitValueUYU, annualRate, maxYears);
+  return downPaymentUSD + principal * unitValueUYU / exchangeRate;
+}
+
+/**
  * Genera los datos para la gráfica Chart.js:
  * una línea por cada tasa, cuota mensual en UYU vs años.
  */
@@ -145,6 +169,8 @@ if (typeof module !== 'undefined' && module.exports) {
     findOptimalScenario,
     explainInfeasible,
     toLoanCurrency,
+    calculateMaxPrincipal,
+    calculateMaxPropertyPrice,
     generateChartData,
   };
 }
