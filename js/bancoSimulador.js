@@ -12,6 +12,8 @@ function maxPublishedYears(oferta) {
   return Math.min(oferta.plazoMax, Math.max(...oferta.tramos.map(t => t.hastaAnios)));
 }
 
+const CURRENCY_SHORT = { UI: 'UI', USD: 'US$', UYU: 'Pesos' };
+
 function formatTea(tea) {
   return tea.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
 }
@@ -19,9 +21,7 @@ function formatTea(tea) {
 function initBankSelect() {
   const select = document.getElementById('bankSelect');
   BANCOS.forEach(b => {
-    const rates = Object.keys(b.monedas)
-      .filter(m => m !== 'UYU')
-      .map(m => `${m} ${formatTea(lowestRate(b, m))}`);
+    const rates = Object.keys(b.monedas).map(m => `${CURRENCY_SHORT[m]} ${formatTea(lowestRate(b, m))}`);
     select.add(new Option(`${b.nombre} (desde ${rates.join(' · ')})`, b.id));
   });
   select.addEventListener('change', () => {
@@ -55,14 +55,26 @@ function applyBankLimits(mode) {
   const rateInput = document.getElementById('interestRate');
   const minInput = document.getElementById('minYears');
   const maxInput = document.getElementById('maxYears');
+  const note = document.getElementById('currencyNote');
   rateInput.readOnly = Boolean(banco);
+  // Solo se pueden elegir las monedas en que presta el banco.
+  Object.entries(CURRENCY_INPUTS).forEach(([m, id]) => {
+    document.getElementById(id).disabled = Boolean(banco) && !banco.monedas[m];
+  });
+  note.textContent = '';
   if (!banco) {
     minInput.min = 1;
     maxInput.max = MAX_YEARS_LIMIT;
     return;
   }
+  const current = getLoanCurrency();
+  if (!banco.monedas[current]) {
+    const next = ['UI', 'USD', 'UYU'].find(m => banco.monedas[m]);
+    setLoanCurrency(next);
+    note.textContent = `${banco.nombre} no presta en ${MONEDAS[current].toLowerCase()}: el préstamo pasa a ${MONEDAS[next].toLowerCase()}. ` +
+      'El precio y el aporte siguen en dólares.';
+  }
   const oferta = banco.monedas[getLoanCurrency()];
-  if (!oferta) return;
   const plazoMin = oferta.plazoMin ?? 1;
   minInput.min = plazoMin;
   maxInput.max = oferta.plazoMax;
@@ -107,7 +119,7 @@ function syncBank(v) {
   bankInfo.innerHTML = `${escapeText(banco.nombre)} acepta plazos de ${oferta.plazoMin ?? 1} a ${oferta.plazoMax} años` +
     (published < oferta.plazoMax ? ` (publica tasa hasta ${published})` : '') +
     ` y financia hasta el ${pct}% del precio. ` +
-    `<a href="financiamiento.html#bancos">Ver condiciones</a>`;
+    `<a href="financiamiento.html#banco-${banco.id}">Ver condiciones</a>`;
 
   const years = v.maxYears >= 1 ? Math.min(v.maxYears, oferta.plazoMax) : published;
   const amount = loan > 0 ? loan : (oferta.montoMinUSD ?? 0);
@@ -151,7 +163,8 @@ function renderBankCompare(principalUSD, years, currency, xRate) {
   document.getElementById('bankCompareIntro').textContent =
     `Préstamo de ${formatUSD(principalUSD)} a ${formatYears(years)} en ${MONEDAS[currency].toLowerCase()}, ` +
     'con la tasa publicada de cada banco, de menor a mayor cuota.' +
-    (currency === 'UI' ? ' En UI la cuota está en valores de hoy y sube con la inflación.' : '');
+    (currency === 'UI' ? ' En UI la cuota está en valores de hoy y sube con la inflación.' : '') +
+    (currency === 'UYU' ? ' En pesos a tasa fija la cuota no cambia en todo el plazo.' : '');
 
   document.getElementById('bankCompareBody').innerHTML = rows.map(r => {
     const isSelected = selected && selected.id === r.banco.id;

@@ -188,3 +188,21 @@ body {
 #interestRate[readonly] {
   background: #eef4ff;
 }
+
+/* Tarjeta de banco enlazada desde el simulador */
+.col-md-6:target .bank-card {
+  outline: 3px solid #0d6efd;
+  outline-offset: 2px;
+}
+
+/* Aviso para volver a la simulación: queda visible al bajar por la página */
+#backToSimulation {
+  position: sticky;
+  top: .5rem;
+  z-index: 10;
+  box-shadow: 0 4px 14px rgba(0,0,0,.08);
+}
+
+[id^="banco-"] {
+  scroll-margin-top: 6rem;
+}

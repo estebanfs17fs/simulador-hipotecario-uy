@@ -6,7 +6,7 @@ Página web que simula un crédito hipotecario en Uruguay. A partir del precio d
 - **Cuota máxima:** el plazo más corto cuya cuota no supera tu cuota máxima. Es el que menos intereses paga.
 - **Óptimo (equilibrio):** el plazo más corto con una cuota hasta la mitad de tu rango.
 
-El préstamo puede calcularse en dólares o en Unidades Indexadas (UI). Las cuotas usan el sistema francés (cuota fija, tasa mensual = TNA / 12).
+El préstamo puede calcularse en dólares, en Unidades Indexadas (UI) o en pesos. Las cuotas usan el sistema francés (cuota fija, tasa mensual = TNA / 12).
 
 ## Uso
 
@@ -25,6 +25,10 @@ La cotización del dólar se obtiene de [open.er-api.com](https://open.er-api.co
 Tiene un comparador: con el monto, el plazo y la moneda calcula la cuota y los intereses en cada banco con su TEA publicada (tasa mensual = (1 + TEA)^(1/12) − 1). **Simular** abre el simulador con ese banco elegido (`index.html?banco=bbva&moneda=UI`).
 
 En el simulador se puede elegir el **banco**. Al elegirlo se cargan su rango de plazos y su tasa (la TEA del tramo que corresponde al plazo máximo y al monto, convertida a TNA), y el formulario valida que el banco acepte el préstamo: moneda, plazos, monto y aporte mínimo según el % que financia. Después de calcular, **¿Qué banco te conviene?** compara la cuota de todos los bancos para ese préstamo y permite cambiar de banco con **Usar**. Antes de calcular, una tarjeta muestra las tasas de cada banco y lleva a la página de financiamiento.
+
+El precio y el aporte se ingresan siempre en dólares. El préstamo puede ser en dólares, UI o pesos; en UI y pesos el monto se convierte con la cotización. Si el banco elegido no presta en la moneda marcada, se pasa a una que sí ofrece y las demás quedan deshabilitadas.
+
+El formulario y la simulación se guardan en `sessionStorage` (solo esa pestaña): al ir a la página de financiamiento y volver, se recuperan los valores y se rehace el cálculo. La página de financiamiento usa ese préstamo para precargar su comparador.
 
 Los datos están en `js/bancos.js`. Para actualizarlos, cambiá `CONSULTADO` y los tramos de cada banco.
 

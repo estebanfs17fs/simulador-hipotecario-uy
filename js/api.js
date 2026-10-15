@@ -28,7 +28,9 @@ function formatUI(amount) {
 }
 
 function formatLoanCurrency(amount, currency) {
-  return currency === 'UI' ? formatUI(amount) : formatUSD(amount);
+  if (currency === 'UI') return formatUI(amount);
+  if (currency === 'UYU') return formatUYU(amount);
+  return formatUSD(amount);
 }
 
 function formatYears(years) {

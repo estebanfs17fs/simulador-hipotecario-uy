@@ -6,12 +6,35 @@ document.addEventListener('DOMContentLoaded', () => {
   renderRatesTable();
   renderBankCards();
   renderSources();
+  const saved = loadSavedSimulation();
+  if (saved) showSavedSimulation(saved);
 
   const form = document.getElementById('compareForm');
   form.addEventListener('input', renderComparison);
   form.addEventListener('submit', e => e.preventDefault());
   renderComparison();
 });
+
+// ─── Simulación guardada en el simulador ─────────────────────────────────────
+// El simulador guarda el formulario en sessionStorage; acá se ofrece volver a él
+// y se usa para precargar el comparador.
+
+function loadSavedSimulation() {
+  try {
+    return JSON.parse(sessionStorage.getItem('simuladorHipotecario'));
+  } catch {
+    return null;
+  }
+}
+
+function showSavedSimulation(saved) {
+  document.getElementById('backToSimulation').classList.replace('d-none', 'd-flex');
+  const loan = Number(saved.propertyPrice) - Number(saved.downPayment);
+  if (loan > 0) document.getElementById('cmpAmount').value = loan;
+  if (Number(saved.maxYears) >= 1) document.getElementById('cmpYears').value = saved.maxYears;
+  const radio = document.querySelector(`input[name="cmpCurrency"][value="${saved.currency}"]`);
+  if (radio) radio.checked = true;
+}
 
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -106,7 +129,7 @@ function renderBankCards() {
     const site = banco.url
       ? `<a href="${banco.url}" target="_blank" rel="noopener" class="small">Ver en el sitio del banco</a>`
       : '';
-    return `<div class="col-md-6 col-xl-4">
+    return `<div class="col-md-6 col-xl-4" id="banco-${banco.id}">
       <div class="card h-100 bank-card">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start mb-2">

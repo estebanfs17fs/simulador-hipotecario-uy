@@ -67,15 +67,34 @@
                 <div id="rateStatus" class="mt-1"></div>
               </div>
 
+              <!-- Banco -->
+              <div class="mb-3 bank-field">
+                <label class="form-label fw-semibold d-flex justify-content-between" for="bankSelect">
+                  Banco
+                  <a href="financiamiento.html" class="fw-normal small">Comparar bancos</a>
+                </label>
+                <div>
+                  <select id="bankSelect" class="form-select">
+                    <option value="">Ninguno (tasa y plazos a mano)</option>
+                  </select>
+                  <div class="invalid-feedback"></div>
+                </div>
+                <div id="bankInfo" class="small text-muted mt-1"></div>
+              </div>
+
               <!-- Moneda del préstamo -->
               <div class="mb-3">
                 <label class="form-label fw-semibold d-block">Moneda del préstamo</label>
                 <div class="btn-group w-100" role="group" aria-label="Moneda del préstamo">
                   <input type="radio" class="btn-check" name="loanCurrency" id="currencyUSD" value="USD" checked />
-                  <label class="btn btn-outline-secondary" for="currencyUSD">Dólares (US$)</label>
+                  <label class="btn btn-outline-secondary" for="currencyUSD">Dólares</label>
                   <input type="radio" class="btn-check" name="loanCurrency" id="currencyUI" value="UI" />
-                  <label class="btn btn-outline-secondary" for="currencyUI">Unidades Indexadas (UI)</label>
+                  <label class="btn btn-outline-secondary" for="currencyUI">UI</label>
+                  <input type="radio" class="btn-check" name="loanCurrency" id="currencyUYU" value="UYU" />
+                  <label class="btn btn-outline-secondary" for="currencyUYU">Pesos</label>
                 </div>
+                <small class="text-muted">El precio y el aporte van siempre en dólares; si el préstamo es en UI o en pesos se convierten con la cotización.</small>
+                <div id="currencyNote" class="small text-primary mt-1"></div>
               </div>
 
               <!-- Valor de la UI -->
@@ -90,21 +109,6 @@
                   <div class="invalid-feedback"></div>
                 </div>
                 <small class="text-muted">Lo publica el <a href="https://www.ine.gub.uy/unidad-indexada" target="_blank" rel="noopener">INE</a>. La cuota en pesos sube con la inflación porque la UI se ajusta a diario.</small>
-              </div>
-
-              <!-- Banco -->
-              <div class="mb-3 bank-field">
-                <label class="form-label fw-semibold d-flex justify-content-between" for="bankSelect">
-                  Banco
-                  <a href="financiamiento.html" class="fw-normal small">Comparar bancos</a>
-                </label>
-                <div>
-                  <select id="bankSelect" class="form-select">
-                    <option value="">Ninguno (tasa y plazos a mano)</option>
-                  </select>
-                  <div class="invalid-feedback"></div>
-                </div>
-                <div id="bankInfo" class="small text-muted mt-1"></div>
               </div>
 
               <!-- Tasa de interés -->

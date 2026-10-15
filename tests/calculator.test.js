@@ -221,6 +221,18 @@ describe('toLoanCurrency', () => {
     expect(toLoanCurrency(100000, 'USD', 42, 6.5)).toEqual({ principal: 100000, unitValueUYU: 42 });
   });
 
+  test('UYU: convierte USD → UYU y la unidad vale 1 peso', () => {
+    expect(toLoanCurrency(100000, 'UYU', 42, 6)).toEqual({ principal: 4200000, unitValueUYU: 1 });
+  });
+
+  test('UYU: la cuota en pesos coincide con la del préstamo en USD a tasa igual', () => {
+    const uyu = toLoanCurrency(100000, 'UYU', 42, 6);
+    const s = findScenarioMaxQuota(uyu.principal, 9, 60000, uyu.unitValueUYU, 5, 10);
+    const usd = findScenarioMaxQuota(100000, 9, 60000, 42, 5, 10);
+    expect(s.years).toBe(usd.years);
+    expect(s.monthlyPaymentUYU).toBeCloseTo(usd.monthlyPaymentUYU, 6);
+  });
+
   test('UI: convierte USD → UYU → UI', () => {
     const { principal, unitValueUYU } = toLoanCurrency(100000, 'UI', 42, 6);
     expect(principal).toBeCloseTo(700000, 5);
