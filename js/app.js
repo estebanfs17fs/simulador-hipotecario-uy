@@ -86,6 +86,7 @@ function setLoanCurrency(currency) {
 function initCurrencyToggle() {
   document.querySelectorAll('input[name="loanCurrency"]').forEach(el =>
     el.addEventListener('change', () => {
+      track(`moneda/${getLoanCurrency()}`);
       document.getElementById('uiValueGroup').classList.toggle('d-none', getLoanCurrency() !== 'UI');
       validateAll();
     })
@@ -155,6 +156,8 @@ function restoreState() {
 function onCalculate(e, { scroll = true } = {}) {
   if (e) e.preventDefault();
   if (!validateAll()) return;
+  // Solo cuenta los cálculos que pide el usuario, no el que se rehace al volver.
+  if (e) track(`calcular/${getLoanCurrency()}/${document.getElementById('bankSelect').value || 'sin-banco'}`);
 
   const { price, rate, downPayment, minYears, maxYears, minPayment, maxPayment, xRate, currency, uiValue } = getInputs();
   const principalUSD = price - downPayment;

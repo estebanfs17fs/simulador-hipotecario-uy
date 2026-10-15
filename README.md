@@ -32,6 +32,27 @@ El formulario y la simulación se guardan en `sessionStorage` (solo esa pestaña
 
 Los datos están en `js/bancos.js`. Para actualizarlos, cambiá `CONSULTADO` y los tramos de cada banco.
 
+## Estadísticas de uso
+
+`js/analytics.js` cuenta visitas y acciones con [GoatCounter](https://www.goatcounter.com) (gratis, sin cookies ni datos personales). Está apagado mientras `ANALYTICS_CODE` esté vacío. Para activarlo, creá una cuenta en GoatCounter, poné tu código en `ANALYTICS_CODE` y mirá el panel en `https://<código>.goatcounter.com`.
+
+Además de las visitas a cada página, registra estas acciones (aparecen como rutas en el panel):
+
+| Evento | Cuándo |
+|---|---|
+| `calcular/<moneda>/<banco>` | Se calculan escenarios (`sin-banco` si no hay banco elegido) |
+| `banco/<id>` | Se elige un banco en el formulario |
+| `moneda/<moneda>` | Se cambia la moneda del préstamo |
+| `usar-banco/<id>` | Se usa otro banco desde la comparación de resultados |
+| `ver-condiciones/<id>` | Se abre el detalle de un banco desde el simulador |
+| `ir-a-bancos/<lugar>` | Se va a la página de bancos (barra, formulario, tarjeta de tasas o resultados) |
+| `comparador-bancos` | Se usa el comparador de la página de bancos |
+| `simular-desde-bancos/<id>` | Se pasa al simulador desde el comparador |
+| `sitio-del-banco/<id>` | Se abre el sitio de un banco |
+| `volver-a-simulacion`, `ir-a-simulador` | Se vuelve al simulador |
+
+Para registrar otro enlace o botón alcanza con agregarle `data-track="nombre"`.
+
 ## Búsqueda de propiedades
 
 > **Deshabilitada por ahora** mientras se corrigen errores: la página no la ofrece después de simular. Para volver a activarla, poné `SEARCH_ENABLED = true` en `js/search.js` (o definí `window.SEARCH_ENABLED = true` antes de cargarlo).
@@ -80,6 +101,7 @@ El workflow `.github/workflows/pages.yml` corre los tests en cada PR y, al hacer
 | `js/search.js` | Formulario y resultados de la búsqueda de propiedades |
 | `js/bancos.js` | Ofertas de los bancos y comparador de préstamos, testeados con Jest |
 | `js/financiamiento.js` | Página de financiamiento |
+| `js/analytics.js` | Estadísticas de uso (GoatCounter) |
 | `js/bancoSimulador.js` | Banco elegido en el simulador, sus validaciones y la comparación de bancos |
 | `js/localidades.js` | Departamentos y localidades (lo usan la página y el backend) |
 | `server/` | Backend de búsqueda: `search.js` filtra y junta, `sources/` tiene una fuente por portal |

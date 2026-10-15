@@ -17,7 +17,7 @@
         <img src="img/logo.png" alt="Simulador Hipotecario" class="brand-logo" />
         <span class="brand-country">Uruguay</span>
       </span>
-      <a class="btn btn-primary btn-sm fw-semibold" href="financiamiento.html">Bancos y tasas</a>
+      <a class="btn btn-primary btn-sm fw-semibold" href="financiamiento.html" data-track="ir-a-bancos/barra">Bancos y tasas</a>
     </div>
   </nav>
 
@@ -71,7 +71,7 @@
               <div class="mb-3 bank-field">
                 <label class="form-label fw-semibold d-flex justify-content-between" for="bankSelect">
                   Banco
-                  <a href="financiamiento.html" class="fw-normal small">Comparar bancos</a>
+                  <a href="financiamiento.html" class="fw-normal small" data-track="ir-a-bancos/formulario">Comparar bancos</a>
                 </label>
                 <div>
                   <select id="bankSelect" class="form-select">
@@ -264,7 +264,7 @@
               </div>
               <p class="small text-muted mb-0">
                 Tasas "desde" publicadas por cada banco, consultadas el <span class="js-consultado"></span>.
-                <a href="financiamiento.html">Ver condiciones, consejos y fuentes</a>.
+                <a href="financiamiento.html" data-track="ir-a-bancos/resultados">Ver condiciones, consejos y fuentes</a>.
               </p>
             </div>
           </section>
@@ -280,7 +280,7 @@
         </div>
 
         <!-- Acceso a la información de financiamiento antes de calcular -->
-        <a id="ratesTeaser" href="financiamiento.html" class="card form-card text-decoration-none rates-teaser">
+        <a id="ratesTeaser" href="financiamiento.html" data-track="ir-a-bancos/tarjeta-tasas" class="card form-card text-decoration-none rates-teaser">
           <div class="card-body p-4">
             <h5 class="card-title text-body mb-2">Tasas hipotecarias hoy en Uruguay</h5>
             <div id="ratesTeaserList" class="d-flex flex-wrap gap-2 mb-3"></div>
@@ -367,6 +367,7 @@
   </div>
 
   <!-- Scripts -->
+  <script src="js/analytics.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="js/calculator.js"></script>
   <script src="js/api.js"></script>

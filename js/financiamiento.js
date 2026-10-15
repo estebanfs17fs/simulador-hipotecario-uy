@@ -11,6 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const form = document.getElementById('compareForm');
   form.addEventListener('input', renderComparison);
+  form.addEventListener('change', () => {
+    if (!comparatorTracked) track('comparador-bancos');
+    comparatorTracked = true;
+  });
   form.addEventListener('submit', e => e.preventDefault());
   renderComparison();
 });
@@ -18,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // ─── Simulación guardada en el simulador ─────────────────────────────────────
 // El simulador guarda el formulario en sessionStorage; acá se ofrece volver a él
 // y se usa para precargar el comparador.
+
+let comparatorTracked = false;
 
 function loadSavedSimulation() {
   try {
@@ -74,7 +80,7 @@ function renderComparison() {
     const badge = isBest(r) ? ' <span class="badge text-bg-success">Menor cuota</span>' : '';
     const link = moneda === 'UYU'
       ? ''
-      : `<a class="btn btn-outline-primary btn-sm" href="index.html?banco=${r.banco.id}&moneda=${moneda}">Simular</a>`;
+      : `<a class="btn btn-outline-primary btn-sm" href="index.html?banco=${r.banco.id}&moneda=${moneda}" data-track="simular-desde-bancos/${r.banco.id}">Simular</a>`;
     return `<tr${isBest(r) ? ' class="table-success"' : ''}>
       <td>${name}${badge}${cond}</td>
       <td>${formatRate(r.tramo.tea, r.tramo.masIva)}</td>
@@ -127,7 +133,7 @@ function renderBankCards() {
       .map(m => `<span class="badge rounded-pill text-bg-light border me-1">${m === 'UYU' ? 'Pesos' : m} ${formatRate(lowestRate(banco, m), banco.monedas[m].tramos.some(t => t.masIva))}</span>`)
       .join('');
     const site = banco.url
-      ? `<a href="${banco.url}" target="_blank" rel="noopener" class="small">Ver en el sitio del banco</a>`
+      ? `<a href="${banco.url}" target="_blank" rel="noopener" class="small" data-track="sitio-del-banco/${banco.id}">Ver en el sitio del banco</a>`
       : '';
     return `<div class="col-md-6 col-xl-4" id="banco-${banco.id}">
       <div class="card h-100 bank-card">

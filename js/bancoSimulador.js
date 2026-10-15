@@ -25,6 +25,7 @@ function initBankSelect() {
     select.add(new Option(`${b.nombre} (desde ${rates.join(' · ')})`, b.id));
   });
   select.addEventListener('change', () => {
+    track(`banco/${select.value || 'ninguno'}`);
     applyBankLimits('load');
     validateAll();
   });
@@ -119,7 +120,7 @@ function syncBank(v) {
   bankInfo.innerHTML = `${escapeText(banco.nombre)} acepta plazos de ${oferta.plazoMin ?? 1} a ${oferta.plazoMax} años` +
     (published < oferta.plazoMax ? ` (publica tasa hasta ${published})` : '') +
     ` y financia hasta el ${pct}% del precio. ` +
-    `<a href="financiamiento.html#banco-${banco.id}">Ver condiciones</a>`;
+    `<a href="financiamiento.html#banco-${banco.id}" data-track="ver-condiciones/${banco.id}">Ver condiciones</a>`;
 
   const years = v.maxYears >= 1 ? Math.min(v.maxYears, oferta.plazoMax) : published;
   const amount = loan > 0 ? loan : (oferta.montoMinUSD ?? 0);
@@ -175,7 +176,7 @@ function renderBankCompare(principalUSD, years, currency, xRate) {
     const cond = r.tramo.condicion ? `<div class="small text-muted">${escapeText(r.tramo.condicion)}</div>` : '';
     const action = isSelected
       ? ''
-      : `<button type="button" class="btn btn-outline-primary btn-sm" data-bank="${r.banco.id}">Usar</button>`;
+      : `<button type="button" class="btn btn-outline-primary btn-sm" data-bank="${r.banco.id}" data-track="usar-banco/${r.banco.id}">Usar</button>`;
     return `<tr${isSelected ? ' class="table-primary"' : ''}>
       <td>${name}${cond}</td>
       <td class="text-nowrap">${formatTea(r.tramo.tea)}${r.tramo.masIva ? ' + IVA' : ''}</td>
