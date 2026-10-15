@@ -27,6 +27,7 @@ const SCENARIOS = {
 
 document.addEventListener('DOMContentLoaded', async () => {
   initCurrencyToggle();
+  initBankSelect();
   applyUrlParams();
   initValidation();
   document.getElementById('calcForm').addEventListener('submit', onCalculate);
@@ -71,7 +72,7 @@ function initCurrencyToggle() {
   );
 }
 
-/** Precarga tasa y moneda cuando se llega desde la página de financiamiento (?tasa=3.69&moneda=UI). */
+/** Precarga moneda, banco o tasa cuando se llega desde la página de financiamiento (?banco=bbva&moneda=UI&tasa=3.69). */
 function applyUrlParams() {
   const params = new URLSearchParams(window.location.search);
   const tasa = Number(params.get('tasa'));
@@ -83,6 +84,8 @@ function applyUrlParams() {
     document.getElementById(moneda === 'UI' ? 'currencyUI' : 'currencyUSD').checked = true;
     document.getElementById('uiValueGroup').classList.toggle('d-none', moneda !== 'UI');
   }
+  const banco = params.get('banco');
+  if (banco) selectBank(banco);
 }
 
 // ─── Cálculo principal ────────────────────────────────────────────────────────
@@ -113,10 +116,13 @@ function onCalculate(e) {
   const rates = [rate * 0.8, rate, rate * 1.2].map(r => +r.toFixed(2));
   renderChart(generateChartData(principal, rates, minYears, maxYears, unitValueUYU));
 
+  renderBankCompare(principalUSD, maxYears, currency, xRate);
+
   showPropertySearch(calculateMaxPropertyPrice(downPayment, maxPayment, rate, maxYears, unitValueUYU, xRate));
 
   document.getElementById('results').classList.remove('d-none');
   document.getElementById('placeholder').classList.add('d-none');
+  document.getElementById('ratesTeaser').classList.add('d-none');
   document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -197,6 +203,8 @@ function initValidation() {
  * Un campo vacío no se marca en rojo, pero mantiene el botón deshabilitado.
  */
 function validateAll() {
+  // Con un banco elegido, primero se carga su tasa para validar con ella.
+  const bankErrors = syncBank(getInputs());
   const v = getInputs();
   const filled = n => !isNaN(n);
   const isInt = n => Number.isInteger(n);
@@ -219,8 +227,12 @@ function validateAll() {
   checks.forEach(([id, failed, msg]) => {
     if (failed && !errors[id]) errors[id] = msg;
   });
+  Object.entries(bankErrors).forEach(([field, msg]) => {
+    const id = field === 'bank' ? 'bankSelect' : field;
+    if (!errors[id]) errors[id] = msg;
+  });
 
-  ['propertyPrice', 'downPayment', 'exchangeRate', 'uiValue', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment']
+  ['bankSelect', 'propertyPrice', 'downPayment', 'exchangeRate', 'uiValue', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment']
     .forEach(id => setFieldError(id, errors[id]));
 
   const required = [v.price, v.downPayment, v.xRate, v.rate, v.minYears, v.maxYears, v.minPayment, v.maxPayment];

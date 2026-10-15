@@ -8,7 +8,10 @@
 const CONSULTADO = '15/10/2026';
 
 /**
- * Cada moneda tiene tramos de tasa. Un tramo aplica si el plazo es <= hastaAnios
+ * Cada moneda tiene el rango de plazos aceptado (plazoMin–plazoMax), el % máximo
+ * del precio que financia (financiacionPct, o financiacionPctSi cuando se cumple
+ * su condición), los montos aceptados en US$ y los tramos de tasa.
+ * Un tramo de tasa aplica si el plazo es <= hastaAnios
  * y el monto (equivalente en US$) está entre montoMinUSD y montoMaxUSD.
  * `masIva`: la tasa publicada no incluye el IVA sobre intereses.
  */
@@ -22,6 +25,8 @@ const BANCOS = [
     monedas: {
       UI: {
         plazoMax: 25,
+        plazoMin: 1,
+        financiacionPct: 90,
         financiacion: 'Hasta 90% (más si sos ahorrista; 100% con Préstamo Soñado)',
         cuotaIngreso: '25% del ingreso disponible (30% con retención de sueldo)',
         tramos: [{ hastaAnios: 25, tea: 3.75 }],
@@ -54,6 +59,9 @@ const BANCOS = [
     monedas: {
       UI: {
         plazoMax: 25,
+        plazoMin: 1,
+        financiacionPct: 80,
+        financiacionPctSi: { pct: 90, precioMayorUSD: 150000 },
         financiacion: '80% (90% si la propiedad supera US$ 150.000)',
         cuotaIngreso: '30% del ingreso líquido',
         tramos: [
@@ -65,6 +73,9 @@ const BANCOS = [
       },
       USD: {
         plazoMax: 25,
+        plazoMin: 1,
+        financiacionPct: 80,
+        financiacionPctSi: { pct: 90, precioMayorUSD: 150000 },
         financiacion: '80% (90% si la propiedad supera US$ 150.000)',
         cuotaIngreso: '15% del ingreso líquido',
         tramos: [
@@ -74,6 +85,7 @@ const BANCOS = [
       },
       UYU: {
         plazoMax: 10,
+        plazoMin: 1,
         financiacion: 'No publicada',
         cuotaIngreso: 'No publicada',
         tramos: [
@@ -107,6 +119,10 @@ const BANCOS = [
     monedas: {
       UI: {
         plazoMax: 30,
+        plazoMin: 3,
+        financiacionPct: 85,
+        montoMinUSD: 20000,
+        montoMaxUSD: 750000,
         financiacion: '85% en general (hasta 95% para colectivos especiales)',
         cuotaIngreso: '35% del ingreso',
         tramos: [
@@ -116,6 +132,10 @@ const BANCOS = [
       },
       USD: {
         plazoMax: 20,
+        plazoMin: 3,
+        financiacionPct: 85,
+        montoMinUSD: 20000,
+        montoMaxUSD: 750000,
         financiacion: '85%',
         cuotaIngreso: '20% del ingreso',
         tramos: [{ hastaAnios: 10, tea: 6.75 }],
@@ -147,6 +167,8 @@ const BANCOS = [
     monedas: {
       UI: {
         plazoMax: 30,
+        plazoMin: 1,
+        financiacionPct: 80,
         financiacion: 'Hasta 80% según la zona (tope UI 4.500.000)',
         cuotaIngreso: '35% del ingreso',
         tramos: [
@@ -155,6 +177,8 @@ const BANCOS = [
       },
       USD: {
         plazoMax: 10,
+        plazoMin: 1,
+        financiacionPct: 70,
         financiacion: '70%',
         cuotaIngreso: '20% del ingreso',
         tramos: [{ hastaAnios: 10, tea: 7.50, masIva: true }],
@@ -183,6 +207,8 @@ const BANCOS = [
     monedas: {
       UI: {
         plazoMax: 25,
+        plazoMin: 4,
+        financiacionPct: 90,
         financiacion: '90% primera vivienda (75% segunda)',
         cuotaIngreso: 'No publicada',
         tramos: [
@@ -191,6 +217,9 @@ const BANCOS = [
       },
       USD: {
         plazoMax: 15,
+        plazoMin: 1,
+        financiacionPct: 80,
+        montoMaxUSD: 700000,
         financiacion: '80% primera vivienda',
         cuotaIngreso: 'No publicada',
         tramos: [{ hastaAnios: 15, tea: 7.50, masIva: true }],
@@ -220,6 +249,10 @@ const BANCOS = [
     monedas: {
       UI: {
         plazoMax: 25,
+        plazoMin: 1,
+        financiacionPct: 90,
+        financiacionPctSi: { pct: 80, montoMayorUSD: 150000 },
+        montoMinUSD: 30000,
         financiacion: '90% (80% para montos mayores a US$ 150.000)',
         cuotaIngreso: '35% del ingreso',
         tramos: [
@@ -289,6 +322,9 @@ function compareLoans(amountUSD, years, moneda, bancos = BANCOS) {
     const oferta = banco.monedas[moneda];
     if (!oferta) return { banco, disponible: false, motivo: `No ofrece préstamos en ${MONEDAS[moneda].toLowerCase()}` };
     if (years > oferta.plazoMax) return { banco, disponible: false, motivo: `Plazo máximo ${oferta.plazoMax} años` };
+    if (years < (oferta.plazoMin ?? 1)) return { banco, disponible: false, motivo: `Plazo mínimo ${oferta.plazoMin} años` };
+    if (oferta.montoMinUSD && amountUSD < oferta.montoMinUSD) return { banco, disponible: false, motivo: `Presta desde US$ ${formatMiles(oferta.montoMinUSD)}` };
+    if (oferta.montoMaxUSD && amountUSD > oferta.montoMaxUSD) return { banco, disponible: false, motivo: `Presta hasta US$ ${formatMiles(oferta.montoMaxUSD)}` };
     const tramo = findTier(oferta, years, amountUSD);
     if (!tramo) return { banco, disponible: false, motivo: 'No publica tasa para ese monto o plazo' };
     const cuota = monthlyPaymentFromTea(amountUSD, tramo.tea, years);
@@ -297,6 +333,59 @@ function compareLoans(amountUSD, years, moneda, bancos = BANCOS) {
   });
   const disponibles = rows.filter(r => r.disponible).sort((a, b) => a.cuota - b.cuota);
   return disponibles.concat(rows.filter(r => !r.disponible));
+}
+
+function findBank(id, bancos = BANCOS) {
+  return bancos.find(b => b.id === id) ?? null;
+}
+
+/** % máximo del precio que financia el banco para esta compra. */
+function maxFinancingPct(oferta, priceUSD, loanUSD) {
+  const si = oferta.financiacionPctSi;
+  if (si && ((si.precioMayorUSD && priceUSD > si.precioMayorUSD) || (si.montoMayorUSD && loanUSD > si.montoMayorUSD))) {
+    return si.pct;
+  }
+  return oferta.financiacionPct;
+}
+
+function formatMiles(n) {
+  return n.toLocaleString('es-UY', { maximumFractionDigits: 0 });
+}
+
+/**
+ * Revisa si el banco acepta el préstamo. Devuelve { campo: mensaje } con los
+ * problemas; los campos son 'bank', 'downPayment', 'minYears' y 'maxYears'.
+ * Los valores vacíos (NaN) no se revisan.
+ */
+function validateBankLoan(banco, { currency, price, downPayment, minYears, maxYears }) {
+  const errors = {};
+  const oferta = banco.monedas[currency];
+  if (!oferta) {
+    errors.bank = `${banco.nombre} no presta en ${MONEDAS[currency].toLowerCase()}.`;
+    return errors;
+  }
+  const loan = price - downPayment;
+  if (loan > 0) {
+    const pct = maxFinancingPct(oferta, price, loan);
+    if (loan > price * pct / 100) {
+      errors.downPayment = `${banco.nombre} financia hasta el ${pct}% del precio: el aporte mínimo es US$ ${formatMiles(Math.ceil(price * (100 - pct) / 100))}.`;
+    }
+    if (oferta.montoMinUSD && loan < oferta.montoMinUSD) {
+      errors.bank = `${banco.nombre} presta desde US$ ${formatMiles(oferta.montoMinUSD)}.`;
+    } else if (oferta.montoMaxUSD && loan > oferta.montoMaxUSD) {
+      errors.bank = `${banco.nombre} presta hasta US$ ${formatMiles(oferta.montoMaxUSD)}.`;
+    }
+  }
+  const plazoMin = oferta.plazoMin ?? 1;
+  if (minYears < plazoMin) {
+    errors.minYears = `${banco.nombre} presta a ${plazoMin} años o más.`;
+  }
+  if (maxYears > oferta.plazoMax) {
+    errors.maxYears = `${banco.nombre} presta hasta ${oferta.plazoMax} años en ${MONEDAS[currency].toLowerCase()}.`;
+  } else if (maxYears >= 1 && loan > 0 && !errors.bank && !findTier(oferta, maxYears, loan)) {
+    errors.maxYears = `${banco.nombre} no publica tasa para ${maxYears} años en ${MONEDAS[currency].toLowerCase()}.`;
+  }
+  return errors;
 }
 
 /** Tasa más baja publicada por un banco en una moneda, o null. */
@@ -316,5 +405,8 @@ if (typeof module !== 'undefined' && module.exports) {
     findTier,
     compareLoans,
     lowestRate,
+    findBank,
+    maxFinancingPct,
+    validateBankLoan,
   };
 }

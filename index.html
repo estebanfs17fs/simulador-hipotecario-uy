@@ -17,7 +17,7 @@
         <img src="img/logo.png" alt="Simulador Hipotecario" class="brand-logo" />
         <span class="brand-country">Uruguay</span>
       </span>
-      <a class="btn btn-outline-primary btn-sm" href="financiamiento.html">Financiamiento: tasas de bancos</a>
+      <a class="btn btn-primary btn-sm fw-semibold" href="financiamiento.html">Bancos y tasas</a>
     </div>
   </nav>
 
@@ -92,6 +92,21 @@
                 <small class="text-muted">Lo publica el <a href="https://www.ine.gub.uy/unidad-indexada" target="_blank" rel="noopener">INE</a>. La cuota en pesos sube con la inflación porque la UI se ajusta a diario.</small>
               </div>
 
+              <!-- Banco -->
+              <div class="mb-3 bank-field">
+                <label class="form-label fw-semibold d-flex justify-content-between" for="bankSelect">
+                  Banco
+                  <a href="financiamiento.html" class="fw-normal small">Comparar bancos</a>
+                </label>
+                <div>
+                  <select id="bankSelect" class="form-select">
+                    <option value="">Ninguno (tasa y plazos a mano)</option>
+                  </select>
+                  <div class="invalid-feedback"></div>
+                </div>
+                <div id="bankInfo" class="small text-muted mt-1"></div>
+              </div>
+
               <!-- Tasa de interés -->
               <div class="mb-3">
                 <label class="form-label fw-semibold" for="interestRate">
@@ -102,6 +117,7 @@
                   <span class="input-group-text">%</span>
                   <div class="invalid-feedback"></div>
                 </div>
+                <div id="rateInfo" class="small text-muted mt-1"></div>
               </div>
 
               <!-- Rango de plazos -->
@@ -229,6 +245,26 @@
             <canvas id="hipotecaChart"></canvas>
           </div>
 
+          <!-- Comparación de bancos para este préstamo -->
+          <section id="bankCompare" class="card form-card mt-4">
+            <div class="card-body p-4">
+              <h5 class="card-title mb-1">¿Qué banco te conviene para este préstamo?</h5>
+              <p id="bankCompareIntro" class="text-muted small mb-3"></p>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-2">
+                  <thead>
+                    <tr><th>Banco</th><th>TEA</th><th>Cuota mensual</th><th>Total intereses</th><th></th></tr>
+                  </thead>
+                  <tbody id="bankCompareBody"></tbody>
+                </table>
+              </div>
+              <p class="small text-muted mb-0">
+                Tasas "desde" publicadas por cada banco, consultadas el <span class="js-consultado"></span>.
+                <a href="financiamiento.html">Ver condiciones, consejos y fuentes</a>.
+              </p>
+            </div>
+          </section>
+
         </div>
 
         <!-- Placeholder antes de calcular -->
@@ -238,6 +274,18 @@
           </svg>
           <p>Completá el formulario para ver los escenarios de financiamiento.</p>
         </div>
+
+        <!-- Acceso a la información de financiamiento antes de calcular -->
+        <a id="ratesTeaser" href="financiamiento.html" class="card form-card text-decoration-none rates-teaser">
+          <div class="card-body p-4">
+            <h5 class="card-title text-body mb-2">Tasas hipotecarias hoy en Uruguay</h5>
+            <div id="ratesTeaserList" class="d-flex flex-wrap gap-2 mb-3"></div>
+            <p class="small text-muted mb-0">
+              Elegí un banco en el formulario para cargar su tasa y sus plazos, o mirá la comparación completa
+              con condiciones y consejos <span class="text-primary fw-semibold">→</span>
+            </p>
+          </div>
+        </a>
 
       </div>
     </div>
@@ -320,6 +368,8 @@
   <script src="js/api.js"></script>
   <script src="js/chartConfig.js"></script>
   <script src="js/localidades.js"></script>
+  <script src="js/bancos.js"></script>
+  <script src="js/bancoSimulador.js"></script>
   <script src="js/app.js"></script>
   <script src="js/search.js"></script>
 

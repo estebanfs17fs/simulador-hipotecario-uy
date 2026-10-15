@@ -51,7 +51,7 @@ function renderComparison() {
     const badge = isBest(r) ? ' <span class="badge text-bg-success">Menor cuota</span>' : '';
     const link = moneda === 'UYU'
       ? ''
-      : `<a class="btn btn-outline-primary btn-sm" href="index.html?tasa=${teaToTna(r.tramo.tea).toFixed(2)}&moneda=${moneda}">Simular</a>`;
+      : `<a class="btn btn-outline-primary btn-sm" href="index.html?banco=${r.banco.id}&moneda=${moneda}">Simular</a>`;
     return `<tr${isBest(r) ? ' class="table-success"' : ''}>
       <td>${name}${badge}${cond}</td>
       <td>${formatRate(r.tramo.tea, r.tramo.masIva)}</td>
@@ -67,7 +67,7 @@ function renderComparison() {
     UYU: 'En pesos a tasa fija la cuota no cambia en todo el plazo. El monto se toma en su equivalente en dólares de hoy.',
   };
   document.getElementById('compareNote').textContent =
-    notes[moneda] + ' "Simular" abre el simulador con la tasa de ese banco convertida a TNA.';
+    notes[moneda] + ' "Simular" abre el simulador con ese banco elegido: carga su tasa y sus plazos.';
 }
 
 // ─── Tabla de tasas ──────────────────────────────────────────────────────────

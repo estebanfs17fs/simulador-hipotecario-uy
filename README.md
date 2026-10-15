@@ -22,7 +22,9 @@ La cotización del dólar se obtiene de [open.er-api.com](https://open.er-api.co
 
 `financiamiento.html` (botón **Financiamiento** en la barra) reúne las ofertas hipotecarias de BHU, BBVA, Santander, Itaú, Scotiabank y BTG Pactual (ex HSBC): tasas por moneda, plazo, financiación, relación cuota/ingreso, puntos fuertes de cada banco, programas públicos (FGCH, Yo Ahorro, subsidio MVOT), consejos y fuentes con fecha de consulta.
 
-Tiene un comparador: con el monto, el plazo y la moneda calcula la cuota y los intereses en cada banco con su TEA publicada (tasa mensual = (1 + TEA)^(1/12) − 1). **Simular** abre el simulador con esa tasa convertida a TNA (`index.html?tasa=3.69&moneda=UI`).
+Tiene un comparador: con el monto, el plazo y la moneda calcula la cuota y los intereses en cada banco con su TEA publicada (tasa mensual = (1 + TEA)^(1/12) − 1). **Simular** abre el simulador con ese banco elegido (`index.html?banco=bbva&moneda=UI`).
+
+En el simulador se puede elegir el **banco**. Al elegirlo se cargan su rango de plazos y su tasa (la TEA del tramo que corresponde al plazo máximo y al monto, convertida a TNA), y el formulario valida que el banco acepte el préstamo: moneda, plazos, monto y aporte mínimo según el % que financia. Después de calcular, **¿Qué banco te conviene?** compara la cuota de todos los bancos para ese préstamo y permite cambiar de banco con **Usar**. Antes de calcular, una tarjeta muestra las tasas de cada banco y lleva a la página de financiamiento.
 
 Los datos están en `js/bancos.js`. Para actualizarlos, cambiá `CONSULTADO` y los tramos de cada banco.
 
@@ -72,6 +74,7 @@ El workflow `.github/workflows/pages.yml` corre los tests en cada PR y, al hacer
 | `js/search.js` | Formulario y resultados de la búsqueda de propiedades |
 | `js/bancos.js` | Ofertas de los bancos y comparador de préstamos, testeados con Jest |
 | `js/financiamiento.js` | Página de financiamiento |
+| `js/bancoSimulador.js` | Banco elegido en el simulador, sus validaciones y la comparación de bancos |
 | `js/localidades.js` | Departamentos y localidades (lo usan la página y el backend) |
 | `server/` | Backend de búsqueda: `search.js` filtra y junta, `sources/` tiene una fuente por portal |
 | `img/` | Logo y favicon |
