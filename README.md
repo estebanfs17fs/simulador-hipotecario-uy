@@ -28,7 +28,7 @@ Los datos están en `js/bancos.js`. Para actualizarlos, cambiá `CONSULTADO` y l
 
 ## Búsqueda de propiedades
 
-Después de simular aparece **Buscá tu casa**. El precio máximo sugerido es lo que se puede pagar con el aporte inicial y la cuota máxima al plazo máximo; se puede editar, igual que el margen de precio (± %, 10 por defecto), los dormitorios mínimos, el tipo, el departamento y las localidades (barrios en Montevideo).
+Después de simular, la página ofrece buscar casas con ese presupuesto; el formulario se abre solo si la persona toca **Buscar casas**. El precio máximo sugerido es lo que se puede pagar con el aporte inicial y la cuota máxima al plazo máximo; se puede editar, igual que el margen de precio (± %, 10 por defecto), los dormitorios mínimos, el tipo, el departamento y las localidades (barrios en Montevideo).
 
 La búsqueda la hace el backend de `server/` (Node 20.18 o superior):
 

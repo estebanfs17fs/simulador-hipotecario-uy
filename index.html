@@ -242,14 +242,23 @@
       </div>
     </div>
 
-    <!-- ── Búsqueda de propiedades (aparece después de simular) ── -->
+    <!-- ── Búsqueda de propiedades: se ofrece después de simular y se abre si el usuario quiere ── -->
     <section id="searchSection" class="card form-card mt-4 d-none">
       <div class="card-body p-4">
-        <h5 class="card-title mb-1">Buscá tu casa</h5>
-        <p class="text-muted small mb-4">
-          Con tu aporte inicial y tu cuota máxima, al plazo máximo, podés pagar una propiedad de hasta
-          <strong id="searchSuggested"></strong>. Ajustá los filtros y buscamos en los portales inmobiliarios.
-        </p>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div>
+            <h5 class="card-title mb-1">¿Querés buscar casas con este presupuesto?</h5>
+            <p class="text-muted small mb-0">
+              Con tu aporte inicial y tu cuota máxima, al plazo máximo, podés pagar una propiedad de hasta
+              <strong id="searchSuggested"></strong>.
+            </p>
+          </div>
+          <button id="btnToggleSearch" type="button" class="btn btn-outline-primary fw-semibold"
+                  aria-expanded="false" aria-controls="searchPanel">Buscar casas</button>
+        </div>
+
+        <div id="searchPanel" class="d-none mt-4">
+        <p class="text-muted small mb-4">Ajustá los filtros y buscamos en los portales inmobiliarios.</p>
         <form id="searchForm" novalidate>
           <div class="row g-3">
             <div class="col-md-4">
@@ -300,6 +309,7 @@
         <div id="searchStatus" class="small text-muted my-3"></div>
         <div id="searchSources"></div>
         <div id="searchResults" class="row g-3 mt-1"></div>
+        </div>
       </div>
     </section>
   </div>
