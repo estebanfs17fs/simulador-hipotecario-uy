@@ -15,18 +15,28 @@ const SOURCE_STATUS = {
 document.addEventListener('DOMContentLoaded', () => {
   initDepartamentos();
   document.getElementById('searchForm').addEventListener('submit', onSearch);
+  document.getElementById('btnToggleSearch').addEventListener('click', toggleSearchPanel);
   ['searchMaxPrice', 'searchTolerance'].forEach(id =>
     document.getElementById(id).addEventListener('input', updatePriceRange)
   );
 });
 
-/** La llama app.js después de simular: muestra la sección con el tope sugerido. */
+/** La llama app.js después de simular: ofrece la búsqueda con el tope sugerido. */
 function showPropertySearch(maxPriceUSD) {
   const price = Math.max(0, Math.floor(maxPriceUSD / 1000) * 1000);
   document.getElementById('searchSuggested').textContent = formatUSD(price).replace(/,00$/, '');
   document.getElementById('searchMaxPrice').value = price;
   document.getElementById('searchSection').classList.remove('d-none');
   updatePriceRange();
+}
+
+function toggleSearchPanel() {
+  const panel = document.getElementById('searchPanel');
+  const btn = document.getElementById('btnToggleSearch');
+  const open = panel.classList.toggle('d-none') === false;
+  btn.setAttribute('aria-expanded', String(open));
+  btn.textContent = open ? 'Ocultar búsqueda' : 'Buscar casas';
+  if (open) document.getElementById('searchMaxPrice').focus();
 }
 
 function initDepartamentos() {
