@@ -90,6 +90,8 @@ cd server && npm test       # backend (node --test)
 
 El workflow `.github/workflows/pages.yml` corre los tests en cada PR y, al hacer merge a `main`, publica el sitio en GitHub Pages. Para que funcione hay que activar Pages una vez en **Settings → Pages → Source: GitHub Actions**.
 
+El dominio propio (`compracasasuy.com`) y el email `info@` se configuran siguiendo [DOMINIO.md](DOMINIO.md).
+
 ## Estructura
 
 | Archivo | Contenido |
