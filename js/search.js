@@ -2,6 +2,10 @@
 // Habla con el backend de server/. En desarrollo corre en localhost:3000; para
 // otro lugar, definí window.SEARCH_API_URL antes de cargar este script.
 
+// Apagada mientras se corrigen errores de la búsqueda: no se ofrece después de
+// simular. Para volver a mostrarla, poné true (o definí window.SEARCH_ENABLED = true).
+const SEARCH_ENABLED = window.SEARCH_ENABLED ?? false;
+
 const SEARCH_API_URL = window.SEARCH_API_URL || 'http://localhost:3000';
 const SEARCH_TIMEOUT_MS = 60000;
 
@@ -23,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /** La llama app.js después de simular: ofrece la búsqueda con el tope sugerido. */
 function showPropertySearch(maxPriceUSD) {
+  if (!SEARCH_ENABLED) return;
   const price = Math.max(0, Math.floor(maxPriceUSD / 1000) * 1000);
   document.getElementById('searchSuggested').textContent = formatUSD(price).replace(/,00$/, '');
   document.getElementById('searchMaxPrice').value = price;

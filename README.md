@@ -34,6 +34,8 @@ Los datos están en `js/bancos.js`. Para actualizarlos, cambiá `CONSULTADO` y l
 
 ## Búsqueda de propiedades
 
+> **Deshabilitada por ahora** mientras se corrigen errores: la página no la ofrece después de simular. Para volver a activarla, poné `SEARCH_ENABLED = true` en `js/search.js` (o definí `window.SEARCH_ENABLED = true` antes de cargarlo).
+
 Después de simular, la página ofrece buscar casas con ese presupuesto; el formulario se abre solo si la persona toca **Buscar casas**. El precio máximo sugerido es lo que se puede pagar con el aporte inicial y la cuota máxima al plazo máximo; se puede editar, igual que el margen de precio (± %, 10 por defecto), los dormitorios mínimos, el tipo, el departamento y las localidades (barrios en Montevideo).
 
 La búsqueda la hace el backend de `server/` (Node 20.18 o superior):
