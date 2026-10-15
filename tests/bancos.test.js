@@ -6,6 +6,9 @@ const {
   findTier,
   compareLoans,
   lowestRate,
+  findBank,
+  maxFinancingPct,
+  validateBankLoan,
 } = require('../js/bancos');
 
 describe('conversión de TEA', () => {
@@ -101,5 +104,64 @@ describe('datos de bancos', () => {
   test('lowestRate', () => {
     expect(lowestRate(BANCOS.find(b => b.id === 'bbva'), 'UI')).toBe(3.75);
     expect(lowestRate(BANCOS.find(b => b.id === 'bhu'), 'USD')).toBeNull();
+  });
+});
+
+describe('maxFinancingPct', () => {
+  test('BBVA financia 90% si la propiedad supera US$ 150.000', () => {
+    const ui = findBank('bbva').monedas.UI;
+    expect(maxFinancingPct(ui, 150000, 100000)).toBe(80);
+    expect(maxFinancingPct(ui, 200000, 100000)).toBe(90);
+  });
+  test('BTG financia 80% si el préstamo supera US$ 150.000', () => {
+    const ui = findBank('btg').monedas.UI;
+    expect(maxFinancingPct(ui, 150000, 120000)).toBe(90);
+    expect(maxFinancingPct(ui, 300000, 200000)).toBe(80);
+  });
+});
+
+describe('validateBankLoan', () => {
+  const ok = { currency: 'UI', price: 150000, downPayment: 30000, minYears: 5, maxYears: 25 };
+
+  test('sin problemas cuando el banco acepta el préstamo', () => {
+    expect(validateBankLoan(findBank('bbva'), ok)).toEqual({});
+  });
+
+  test('moneda que el banco no ofrece', () => {
+    expect(validateBankLoan(findBank('bhu'), { ...ok, currency: 'USD' }).bank).toMatch(/no presta en dólares/);
+  });
+
+  test('aporte menor al que exige la financiación máxima', () => {
+    const e = validateBankLoan(findBank('bbva'), { ...ok, downPayment: 20000 });
+    expect(e.downPayment).toMatch(/80%/);
+    expect(e.downPayment).toMatch(/30\.000/);
+  });
+
+  test('plazo fuera del rango del banco', () => {
+    const e = validateBankLoan(findBank('santander'), { ...ok, minYears: 2, maxYears: 31 });
+    expect(e.minYears).toMatch(/3 años o más/);
+    expect(e.maxYears).toMatch(/hasta 30 años/);
+  });
+
+  test('plazo sin tasa publicada (Santander en dólares a más de 10 años)', () => {
+    const e = validateBankLoan(findBank('santander'), { ...ok, currency: 'USD', maxYears: 15 });
+    expect(e.maxYears).toMatch(/no publica tasa para 15 años/);
+  });
+
+  test('monto fuera del rango del banco', () => {
+    expect(validateBankLoan(findBank('btg'), { ...ok, price: 30000, downPayment: 10000 }).bank).toMatch(/desde US\$ 30\.000/);
+    expect(validateBankLoan(findBank('santander'), { ...ok, price: 1000000, downPayment: 150000 }).bank).toMatch(/hasta US\$ 750\.000/);
+  });
+
+  test('ignora los campos vacíos', () => {
+    expect(validateBankLoan(findBank('bbva'), { currency: 'UI', price: NaN, downPayment: NaN, minYears: NaN, maxYears: NaN })).toEqual({});
+  });
+});
+
+describe('compareLoans con límites del banco', () => {
+  test('excluye bancos por plazo mínimo y monto', () => {
+    const rows = compareLoans(25000, 2, 'UI');
+    expect(rows.find(r => r.banco.id === 'santander').motivo).toMatch(/Plazo mínimo 3/);
+    expect(rows.find(r => r.banco.id === 'btg').motivo).toMatch(/desde US\$ 30\.000/);
   });
 });

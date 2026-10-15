@@ -27,15 +27,32 @@ const SCENARIOS = {
 
 document.addEventListener('DOMContentLoaded', async () => {
   initCurrencyToggle();
-  applyUrlParams();
+  initBankSelect();
+  const saved = restoreState();
+  applyUrlParams(Boolean(saved));
   initValidation();
-  document.getElementById('calcForm').addEventListener('submit', onCalculate);
+  const form = document.getElementById('calcForm');
+  form.addEventListener('submit', onCalculate);
+  form.addEventListener('input', () => saveState());
+  form.addEventListener('change', () => saveState());
   await loadExchangeRate();
+  // Al volver de otra página se rehace la simulación que estaba calculada.
+  if (saved?.calculated && validateAll()) onCalculate(null, { scroll: false });
 });
 
 async function loadExchangeRate() {
   const rateInput = document.getElementById('exchangeRate');
   const rateStatus = document.getElementById('rateStatus');
+
+  rateInput.addEventListener('input', () => {
+    exchangeRate = parseFloat(rateInput.value) || null;
+  });
+
+  if (rateInput.value !== '') {
+    exchangeRate = parseFloat(rateInput.value) || null;
+    rateStatus.innerHTML = '<span class="text-muted">Cotización que tenías cargada; podés editarla.</span>';
+    return;
+  }
 
   rateStatus.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Obteniendo cotización…</span>';
   rateInput.disabled = true;
@@ -52,44 +69,95 @@ async function loadExchangeRate() {
   }
   rateInput.disabled = false;
   validateAll();
-
-  rateInput.addEventListener('input', () => {
-    exchangeRate = parseFloat(rateInput.value) || null;
-  });
+  saveState();
 }
 
 function getLoanCurrency() {
   return document.querySelector('input[name="loanCurrency"]:checked').value;
 }
 
+const CURRENCY_INPUTS = { USD: 'currencyUSD', UI: 'currencyUI', UYU: 'currencyUYU' };
+
+function setLoanCurrency(currency) {
+  document.getElementById(CURRENCY_INPUTS[currency]).checked = true;
+  document.getElementById('uiValueGroup').classList.toggle('d-none', currency !== 'UI');
+}
+
 function initCurrencyToggle() {
   document.querySelectorAll('input[name="loanCurrency"]').forEach(el =>
     el.addEventListener('change', () => {
+      track(`moneda/${getLoanCurrency()}`);
       document.getElementById('uiValueGroup').classList.toggle('d-none', getLoanCurrency() !== 'UI');
       validateAll();
     })
   );
 }
 
-/** Precarga tasa y moneda cuando se llega desde la página de financiamiento (?tasa=3.69&moneda=UI). */
-function applyUrlParams() {
+/**
+ * Precarga moneda, banco o tasa cuando se llega desde la página de financiamiento
+ * (?banco=bbva&moneda=UI&tasa=3.69). Si había una simulación guardada, sus plazos
+ * se mantienen y solo se ajustan al rango del banco.
+ */
+function applyUrlParams(hasSavedState) {
   const params = new URLSearchParams(window.location.search);
   const tasa = Number(params.get('tasa'));
   if (params.has('tasa') && tasa >= 0 && tasa <= MAX_RATE_LIMIT) {
     document.getElementById('interestRate').value = tasa.toFixed(2);
   }
   const moneda = params.get('moneda');
-  if (moneda === 'UI' || moneda === 'USD') {
-    document.getElementById(moneda === 'UI' ? 'currencyUI' : 'currencyUSD').checked = true;
-    document.getElementById('uiValueGroup').classList.toggle('d-none', moneda !== 'UI');
+  if (CURRENCY_INPUTS[moneda]) setLoanCurrency(moneda);
+  const banco = params.get('banco');
+  if (banco) selectBank(banco, hasSavedState ? 'clamp' : 'load');
+  if (params.toString()) history.replaceState(null, '', window.location.pathname);
+}
+
+// ─── Simulación guardada ──────────────────────────────────────────────────────
+// Se guarda en sessionStorage (solo esta pestaña) para no perder el formulario ni
+// los resultados al ir a la página de financiamiento y volver.
+
+const STATE_KEY = 'simuladorHipotecario';
+const STATE_FIELDS = ['propertyPrice', 'downPayment', 'exchangeRate', 'uiValue', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment'];
+let simulationCalculated = false;
+
+function saveState() {
+  const state = {
+    currency: getLoanCurrency(),
+    bank: document.getElementById('bankSelect').value,
+    calculated: simulationCalculated,
+  };
+  STATE_FIELDS.forEach(id => { state[id] = document.getElementById(id).value; });
+  try {
+    sessionStorage.setItem(STATE_KEY, JSON.stringify(state));
+  } catch {
+    // Sin almacenamiento disponible: la simulación no se recuerda.
   }
+}
+
+/** Carga la simulación guardada en el formulario. Devuelve el estado o null. */
+function restoreState() {
+  let state = null;
+  try {
+    state = JSON.parse(sessionStorage.getItem(STATE_KEY));
+  } catch {
+    return null;
+  }
+  if (!state) return null;
+  STATE_FIELDS.forEach(id => {
+    if (typeof state[id] === 'string') document.getElementById(id).value = state[id];
+  });
+  if (CURRENCY_INPUTS[state.currency]) setLoanCurrency(state.currency);
+  if (state.bank) selectBank(state.bank, 'clamp');
+  simulationCalculated = Boolean(state.calculated);
+  return state;
 }
 
 // ─── Cálculo principal ────────────────────────────────────────────────────────
 
-function onCalculate(e) {
-  e.preventDefault();
+function onCalculate(e, { scroll = true } = {}) {
+  if (e) e.preventDefault();
   if (!validateAll()) return;
+  // Solo cuenta los cálculos que pide el usuario, no el que se rehace al volver.
+  if (e) track(`calcular/${getLoanCurrency()}/${document.getElementById('bankSelect').value || 'sin-banco'}`);
 
   const { price, rate, downPayment, minYears, maxYears, minPayment, maxPayment, xRate, currency, uiValue } = getInputs();
   const principalUSD = price - downPayment;
@@ -113,11 +181,16 @@ function onCalculate(e) {
   const rates = [rate * 0.8, rate, rate * 1.2].map(r => +r.toFixed(2));
   renderChart(generateChartData(principal, rates, minYears, maxYears, unitValueUYU));
 
+  renderBankCompare(principalUSD, maxYears, currency, xRate);
+
   showPropertySearch(calculateMaxPropertyPrice(downPayment, maxPayment, rate, maxYears, unitValueUYU, xRate));
 
   document.getElementById('results').classList.remove('d-none');
   document.getElementById('placeholder').classList.add('d-none');
-  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('ratesTeaser').classList.add('d-none');
+  simulationCalculated = true;
+  saveState();
+  if (scroll) document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
 }
 
 function readNumber(id) {
@@ -171,14 +244,16 @@ function renderScenario(id, result, infeasible, budgetLabel, currency) {
 
   const fmt = amount => formatLoanCurrency(amount, currency);
   const uyuNote = currency === 'UI' ? ' (valor de hoy)' : '';
+  // En pesos el monto ya está en UYU; en las otras monedas se agrega su valor en pesos.
+  const inUYU = (amountUYU, cls) => currency === 'UYU' ? '' : `<br><small class="${cls}">${formatUYU(amountUYU)}${uyuNote}</small>`;
   card.querySelector('.scenario-body').innerHTML = `
     <table class="table table-sm mb-0">
       <tbody>
         <tr><th>Plazo</th><td>${formatYears(result.years)}</td></tr>
-        <tr><th>Cuota mensual</th><td>${fmt(result.monthlyPayment)}<br><small class="text-muted">${formatUYU(result.monthlyPaymentUYU)}${uyuNote}</small></td></tr>
-        <tr><th>Total intereses</th><td>${fmt(result.totalInterest)}<br><small class="text-muted">${formatUYU(result.totalInterestUYU)}${uyuNote}</small></td></tr>
+        <tr><th>Cuota mensual</th><td>${fmt(result.monthlyPayment)}${inUYU(result.monthlyPaymentUYU, 'text-muted')}</td></tr>
+        <tr><th>Total intereses</th><td>${fmt(result.totalInterest)}${inUYU(result.totalInterestUYU, 'text-muted')}</td></tr>
         <tr class="table-${color}">
-          <th>Total a pagar</th><td>${fmt(result.totalPayment)}<br><small>${formatUYU(result.totalPaymentUYU)}${uyuNote}</small></td>
+          <th>Total a pagar</th><td>${fmt(result.totalPayment)}${inUYU(result.totalPaymentUYU, '')}</td>
         </tr>
       </tbody>
     </table>`;
@@ -197,6 +272,8 @@ function initValidation() {
  * Un campo vacío no se marca en rojo, pero mantiene el botón deshabilitado.
  */
 function validateAll() {
+  // Con un banco elegido, primero se carga su tasa para validar con ella.
+  const bankErrors = syncBank(getInputs());
   const v = getInputs();
   const filled = n => !isNaN(n);
   const isInt = n => Number.isInteger(n);
@@ -219,8 +296,12 @@ function validateAll() {
   checks.forEach(([id, failed, msg]) => {
     if (failed && !errors[id]) errors[id] = msg;
   });
+  Object.entries(bankErrors).forEach(([field, msg]) => {
+    const id = field === 'bank' ? 'bankSelect' : field;
+    if (!errors[id]) errors[id] = msg;
+  });
 
-  ['propertyPrice', 'downPayment', 'exchangeRate', 'uiValue', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment']
+  ['bankSelect', 'propertyPrice', 'downPayment', 'exchangeRate', 'uiValue', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment']
     .forEach(id => setFieldError(id, errors[id]));
 
   const required = [v.price, v.downPayment, v.xRate, v.rate, v.minYears, v.maxYears, v.minPayment, v.maxPayment];

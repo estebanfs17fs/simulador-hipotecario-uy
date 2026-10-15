@@ -6,12 +6,41 @@ document.addEventListener('DOMContentLoaded', () => {
   renderRatesTable();
   renderBankCards();
   renderSources();
+  const saved = loadSavedSimulation();
+  if (saved) showSavedSimulation(saved);
 
   const form = document.getElementById('compareForm');
   form.addEventListener('input', renderComparison);
+  form.addEventListener('change', () => {
+    if (!comparatorTracked) track('comparador-bancos');
+    comparatorTracked = true;
+  });
   form.addEventListener('submit', e => e.preventDefault());
   renderComparison();
 });
+
+// ─── Simulación guardada en el simulador ─────────────────────────────────────
+// El simulador guarda el formulario en sessionStorage; acá se ofrece volver a él
+// y se usa para precargar el comparador.
+
+let comparatorTracked = false;
+
+function loadSavedSimulation() {
+  try {
+    return JSON.parse(sessionStorage.getItem('simuladorHipotecario'));
+  } catch {
+    return null;
+  }
+}
+
+function showSavedSimulation(saved) {
+  document.getElementById('backToSimulation').classList.replace('d-none', 'd-flex');
+  const loan = Number(saved.propertyPrice) - Number(saved.downPayment);
+  if (loan > 0) document.getElementById('cmpAmount').value = loan;
+  if (Number(saved.maxYears) >= 1) document.getElementById('cmpYears').value = saved.maxYears;
+  const radio = document.querySelector(`input[name="cmpCurrency"][value="${saved.currency}"]`);
+  if (radio) radio.checked = true;
+}
 
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -51,7 +80,7 @@ function renderComparison() {
     const badge = isBest(r) ? ' <span class="badge text-bg-success">Menor cuota</span>' : '';
     const link = moneda === 'UYU'
       ? ''
-      : `<a class="btn btn-outline-primary btn-sm" href="index.html?tasa=${teaToTna(r.tramo.tea).toFixed(2)}&moneda=${moneda}">Simular</a>`;
+      : `<a class="btn btn-outline-primary btn-sm" href="index.html?banco=${r.banco.id}&moneda=${moneda}" data-track="simular-desde-bancos/${r.banco.id}">Simular</a>`;
     return `<tr${isBest(r) ? ' class="table-success"' : ''}>
       <td>${name}${badge}${cond}</td>
       <td>${formatRate(r.tramo.tea, r.tramo.masIva)}</td>
@@ -67,7 +96,7 @@ function renderComparison() {
     UYU: 'En pesos a tasa fija la cuota no cambia en todo el plazo. El monto se toma en su equivalente en dólares de hoy.',
   };
   document.getElementById('compareNote').textContent =
-    notes[moneda] + ' "Simular" abre el simulador con la tasa de ese banco convertida a TNA.';
+    notes[moneda] + ' "Simular" abre el simulador con ese banco elegido: carga su tasa y sus plazos.';
 }
 
 // ─── Tabla de tasas ──────────────────────────────────────────────────────────
@@ -104,9 +133,9 @@ function renderBankCards() {
       .map(m => `<span class="badge rounded-pill text-bg-light border me-1">${m === 'UYU' ? 'Pesos' : m} ${formatRate(lowestRate(banco, m), banco.monedas[m].tramos.some(t => t.masIva))}</span>`)
       .join('');
     const site = banco.url
-      ? `<a href="${banco.url}" target="_blank" rel="noopener" class="small">Ver en el sitio del banco</a>`
+      ? `<a href="${banco.url}" target="_blank" rel="noopener" class="small" data-track="sitio-del-banco/${banco.id}">Ver en el sitio del banco</a>`
       : '';
-    return `<div class="col-md-6 col-xl-4">
+    return `<div class="col-md-6 col-xl-4" id="banco-${banco.id}">
       <div class="card h-100 bank-card">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start mb-2">

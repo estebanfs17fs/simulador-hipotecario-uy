@@ -101,12 +101,16 @@ function explainInfeasible(principal, annualRate, budgetUYU, exchangeRate, maxYe
 
 /**
  * Pasa el préstamo de USD a la moneda en que se otorga.
- * USD: queda igual. UI: USD → UYU con la cotización y UYU → UI con el valor de la UI.
+ * USD: queda igual. UYU: USD → UYU con la cotización. UI: USD → UYU con la
+ * cotización y UYU → UI con el valor de la UI.
  * Retorna también `unitValueUYU`, los pesos que vale una unidad de esa moneda hoy.
  */
 function toLoanCurrency(principalUSD, currency, exchangeRate, uiValue) {
   if (currency === 'UI') {
     return { principal: principalUSD * exchangeRate / uiValue, unitValueUYU: uiValue };
+  }
+  if (currency === 'UYU') {
+    return { principal: principalUSD * exchangeRate, unitValueUYU: 1 };
   }
   return { principal: principalUSD, unitValueUYU: exchangeRate };
 }
