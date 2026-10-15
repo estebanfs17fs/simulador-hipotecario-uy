@@ -26,8 +26,9 @@ const SCENARIOS = {
 // ─── Inicialización ───────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
-  initValidation();
   initCurrencyToggle();
+  applyUrlParams();
+  initValidation();
   document.getElementById('calcForm').addEventListener('submit', onCalculate);
   await loadExchangeRate();
 });
@@ -68,6 +69,20 @@ function initCurrencyToggle() {
       validateAll();
     })
   );
+}
+
+/** Precarga tasa y moneda cuando se llega desde la página de financiamiento (?tasa=3.69&moneda=UI). */
+function applyUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const tasa = Number(params.get('tasa'));
+  if (params.has('tasa') && tasa >= 0 && tasa <= MAX_RATE_LIMIT) {
+    document.getElementById('interestRate').value = tasa.toFixed(2);
+  }
+  const moneda = params.get('moneda');
+  if (moneda === 'UI' || moneda === 'USD') {
+    document.getElementById(moneda === 'UI' ? 'currencyUI' : 'currencyUSD').checked = true;
+    document.getElementById('uiValueGroup').classList.toggle('d-none', moneda !== 'UI');
+  }
 }
 
 // ─── Cálculo principal ────────────────────────────────────────────────────────

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es-UY">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financiamiento — Simulador Hipotecario Uruguay</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" type="image/png" href="img/favicon.png" />
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar app-navbar mb-4">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-3" href="index.html">
+        <img src="img/logo.png" alt="Simulador Hipotecario" class="brand-logo" />
+        <span class="brand-country">Uruguay</span>
+      </a>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary btn-sm" href="index.html">Simulador</a>
+        <a class="btn btn-primary btn-sm" href="financiamiento.html" aria-current="page">Financiamiento</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container pb-5">
+
+    <header class="mb-4">
+      <h1 class="h3 fw-bold mb-2">Financiamiento: qué ofrece cada banco</h1>
+      <p class="text-muted mb-2">
+        Tasas y condiciones de los préstamos hipotecarios para comprar vivienda en Uruguay, comparadas lado a lado.
+      </p>
+      <div class="alert alert-info small mb-0">
+        Datos consultados el <strong class="js-consultado"></strong> en las páginas de cada banco y en comparadores
+        (ver <a href="#fuentes">fuentes</a>). Las tasas son <strong>TEA "desde"</strong>: el banco fija la tuya según tu perfil,
+        el plazo y el monto. Confirmá siempre con el banco antes de decidir.
+      </div>
+    </header>
+
+    <nav class="fin-index mb-4 small">
+      <a href="#comparar">Comparar préstamos</a>
+      <a href="#tasas">Tasas</a>
+      <a href="#bancos">Cada banco</a>
+      <a href="#programas">Programas públicos</a>
+      <a href="#consejos">Consejos</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <!-- ── Comparador ── -->
+    <section id="comparar" class="card form-card mb-4">
+      <div class="card-body p-4">
+        <h2 class="h5 card-title mb-1">Comparar préstamos</h2>
+        <p class="text-muted small mb-4">
+          Ingresá cuánto necesitás pedir y en cuántos años, y te mostramos la cuota con la tasa publicada de cada banco.
+        </p>
+        <form id="compareForm" class="row g-3 align-items-end" novalidate>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold" for="cmpAmount">Monto del préstamo</label>
+            <div class="input-group">
+              <span class="input-group-text">US$</span>
+              <input type="number" id="cmpAmount" class="form-control" value="120000" min="1000" step="1000" required />
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold" for="cmpYears">Plazo (años)</label>
+            <input type="number" id="cmpYears" class="form-control" value="25" min="1" max="40" step="1" required />
+          </div>
+          <div class="col-md-5">
+            <label class="form-label fw-semibold d-block">Moneda</label>
+            <div class="btn-group w-100" role="group" aria-label="Moneda">
+              <input type="radio" class="btn-check" name="cmpCurrency" id="cmpUI" value="UI" checked />
+              <label class="btn btn-outline-secondary" for="cmpUI">UI</label>
+              <input type="radio" class="btn-check" name="cmpCurrency" id="cmpUSD" value="USD" />
+              <label class="btn btn-outline-secondary" for="cmpUSD">Dólares</label>
+              <input type="radio" class="btn-check" name="cmpCurrency" id="cmpUYU" value="UYU" />
+              <label class="btn btn-outline-secondary" for="cmpUYU">Pesos</label>
+            </div>
+          </div>
+        </form>
+        <div id="compareError" class="text-danger small mt-3"></div>
+        <div class="table-responsive mt-3">
+          <table class="table table-sm align-middle mb-2" id="compareTable">
+            <thead>
+              <tr>
+                <th>Banco</th>
+                <th>TEA</th>
+                <th>Cuota mensual</th>
+                <th>Total intereses</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="compareNote" class="small text-muted mb-0"></p>
+      </div>
+    </section>
+
+    <!-- ── Tabla de tasas ── -->
+    <section id="tasas" class="card form-card mb-4">
+      <div class="card-body p-4">
+        <h2 class="h5 card-title mb-1">Tasas y condiciones principales</h2>
+        <p class="text-muted small mb-3">Primera vivienda, persona residente. La tasa es la más baja publicada para cada moneda.</p>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 rates-table">
+            <thead>
+              <tr>
+                <th>Banco</th>
+                <th>Moneda</th>
+                <th>TEA desde</th>
+                <th>Plazo máx.</th>
+                <th>Financiación</th>
+                <th>Cuota / ingreso</th>
+              </tr>
+            </thead>
+            <tbody id="ratesBody"></tbody>
+          </table>
+        </div>
+        <p class="small text-muted mt-3 mb-0">
+          <strong>BROU</strong> no publica un préstamo hipotecario propio para vivienda: a quienes cobran el sueldo en el BROU o tienen la
+          Tarjeta Joven les bonifica el costo de solicitud de un préstamo del BHU (<a href="https://www.brou.com.uy/personas/cuentas/beneficios-exclusivos-bhu" target="_blank" rel="noopener">ver beneficio</a>).
+        </p>
+      </div>
+    </section>
+
+    <!-- ── Bancos ── -->
+    <section id="bancos" class="mb-4">
+      <h2 class="h5 fw-bold mb-3">Lo más fuerte de cada banco</h2>
+      <div id="bankCards" class="row g-3"></div>
+    </section>
+
+    <!-- ── Programas públicos ── -->
+    <section id="programas" class="card form-card mb-4">
+      <div class="card-body p-4">
+        <h2 class="h5 card-title mb-3">Programas públicos que ayudan con la entrega</h2>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <h3 class="h6 fw-semibold">Fondo de Garantía (FGCH)</h3>
+            <p class="small mb-0">
+              De la ANV, sin costo. Si podés pagar la cuota pero no tenés ahorro, te permite entrar con desde el 5% y financiar
+              hasta el 95% en UI o pesos. Para hogares con ingreso líquido de hasta 100 UR, cuota menor al 35% del ingreso
+              y sin otra propiedad. Lo usan BBVA, BHU, BTG (ex HSBC), Santander y Scotiabank.
+              <a href="https://www.gub.uy/tramites/solicitud-fondo-garantia-creditos-hipotecarios" target="_blank" rel="noopener">Ver trámite</a>.
+            </p>
+          </div>
+          <div class="col-md-4">
+            <h3 class="h6 fw-semibold">Ahorro previo en el BHU</h3>
+            <p class="small mb-0">
+              Con <em>Yo Ahorro</em> (o <em>Yo Ahorro alquilando</em>, que cuenta el alquiler como ahorro) accedés a más financiación y
+              mejor tasa cuando pedís el préstamo.
+              <a href="https://www.gub.uy/comprar" target="_blank" rel="noopener">Guía del Estado para comprar</a>.
+            </p>
+          </div>
+          <div class="col-md-4">
+            <h3 class="h6 fw-semibold">Subsidio a la cuota (MVOT)</h3>
+            <p class="small mb-0">
+              El Ministerio de Vivienda tiene programas de compra de vivienda nueva y usada en los que paga parte de la cuota y
+              permite financiar hasta el 90%.
+              <a href="https://www.gub.uy/comprar" target="_blank" rel="noopener">Ver opciones</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Consejos ── -->
+    <section id="consejos" class="card form-card mb-4">
+      <div class="card-body p-4">
+        <h2 class="h5 card-title mb-3">Consejos antes de pedir el préstamo</h2>
+        <ol class="tips-list mb-0">
+          <li><strong>Pedí en UI si cobrás en pesos.</strong> La tasa es la mitad que en dólares y la cuota acompaña a la inflación, que suele
+            seguir a los salarios. En dólares, si sube el tipo de cambio la cuota en pesos sube de golpe; por eso los bancos solo dejan
+            comprometer 15–20% del ingreso.</li>
+          <li><strong>Si querés cuota fija en pesos</strong>, el préstamo en pesos de BBVA no varía con la UI ni con el dólar, a cambio de una tasa
+            más alta (9% TEA) y un plazo de hasta 10 años.</li>
+          <li><strong>Mirá la TEA, no solo la tasa nominal</strong>, y preguntá si incluye IVA: en dólares los intereses pagan IVA, en UI para
+            vivienda principal normalmente no.</li>
+          <li><strong>Sumá los gastos al aporte.</strong> Además de la entrega vas a pagar honorarios del escribano, impuestos de la compraventa,
+            tasación y gastos del banco. Pedí un presupuesto al escribano antes de definir cuánto aportás.</li>
+          <li><strong>Cobrar el sueldo en el banco baja la tasa.</strong> BBVA, Itaú y Scotiabank reservan sus mejores tasas o plazos para quien
+            cobra ahí o tiene un paquete de cuenta.</li>
+          <li><strong>Cuidá la relación cuota/ingreso.</strong> Los bancos aceptan entre 25% y 35% del ingreso líquido en UI. Usá la cuota máxima
+            del simulador con ese tope.</li>
+          <li><strong>Pedí preaprobación en dos o tres bancos.</strong> Las tasas publicadas son "desde"; la oferta real depende de tu perfil y
+            es la que tenés que comparar.</li>
+          <li><strong>Un plazo más corto paga muchos menos intereses.</strong> Mirá el "Total intereses" en el comparador: bajar de 30 a 20 años
+            suele ahorrar decenas de miles de dólares.</li>
+          <li><strong>Revisá la cancelación anticipada.</strong> Algunos bancos cobran multa si adelantás pagos el primer año o limitan cuántas
+            veces podés hacerlo.</li>
+          <li><strong>Revisá tu Clearing antes de ir.</strong> Cualquier antecedente negativo en el Clearing o el BCU frena la solicitud.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ── Fuentes ── -->
+    <section id="fuentes" class="card form-card">
+      <div class="card-body p-4">
+        <h2 class="h5 card-title mb-1">Fuentes</h2>
+        <p class="text-muted small mb-3">Consultadas el <span class="js-consultado"></span>.</p>
+        <ul id="sourcesList" class="small mb-0"></ul>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/bancos.js"></script>
+  <script src="js/financiamiento.js"></script>
+</body>
+</html>
