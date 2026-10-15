@@ -34,7 +34,7 @@ Los datos están en `js/bancos.js`. Para actualizarlos, cambiá `CONSULTADO` y l
 
 ## Estadísticas de uso
 
-`js/analytics.js` cuenta visitas y acciones con [GoatCounter](https://www.goatcounter.com) (gratis, sin cookies ni datos personales). Está apagado mientras `ANALYTICS_CODE` esté vacío. Para activarlo, creá una cuenta en GoatCounter, poné tu código en `ANALYTICS_CODE` y mirá el panel en `https://<código>.goatcounter.com`.
+`js/analytics.js` cuenta visitas y acciones con [GoatCounter](https://www.goatcounter.com) (gratis, sin cookies ni datos personales). El panel está en [maomao.goatcounter.com](https://maomao.goatcounter.com); el código se cambia en `ANALYTICS_CODE` y, si se deja vacío, no se cuenta nada. GoatCounter no cuenta las visitas desde `localhost`.
 
 Además de las visitas a cada página, registra estas acciones (aparecen como rutas en el panel):
 

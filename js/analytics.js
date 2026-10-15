@@ -1,11 +1,11 @@
 // ─── Estadísticas de uso ──────────────────────────────────────────────────────
 // Cuenta visitas y acciones con GoatCounter (gratis, sin cookies ni datos
-// personales). Mientras ANALYTICS_CODE esté vacío no se carga nada.
+// personales). Si ANALYTICS_CODE está vacío no se carga nada.
 // Para activarlo: creá una cuenta en https://www.goatcounter.com, elegí un código
 // (por ejemplo "simulador-uy") y ponelo acá. Las estadísticas se ven en
 // https://<código>.goatcounter.com.
 
-const ANALYTICS_CODE = window.ANALYTICS_CODE ?? '';
+const ANALYTICS_CODE = window.ANALYTICS_CODE ?? 'maomao';
 
 const analyticsQueue = [];
 
