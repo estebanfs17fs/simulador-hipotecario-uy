@@ -16,10 +16,12 @@ Alternativas descartadas por precio: `.uy` cuesta ~US$ 25 por año en NIC Urugua
 
 ## Pasos
 
-### 1. Comprar el dominio
+### 1. Comprar el dominio (ya hecho)
 1. Crear una cuenta gratis en <https://dash.cloudflare.com>.
 2. **Domain Registration → Register Domains**, buscar `compracasasuy.com` y comprarlo (pide tarjeta).
 3. El dominio queda con el DNS ya en Cloudflare.
+
+Si el dominio se compró en otro lado, igual se puede usar Cloudflare gratis: **Add a site** → `compracasasuy.com` → plan Free, y en el panel de donde se compró cambiar los nameservers por los dos que da Cloudflare. Desde ahí siguen los mismos pasos.
 
 ### 2. Apuntarlo a GitHub Pages
 En Cloudflare, **DNS → Records**, agregar (todos con el proxy **apagado**, nube gris, "DNS only"):
@@ -52,5 +54,6 @@ Email Routing solo recibe. Para que las respuestas salgan desde `info@`:
 3. En Gmail, **Configuración → Cuentas → Enviar como → Agregar otra dirección**: `info@compracasasuy.com`, servidor `smtp-relay.brevo.com`, puerto 587, con el usuario y clave de Brevo.
 
 ## En el repo
+- Las dos páginas muestran `info@compracasasuy.com` como contacto al pie.
 - `CNAME` tiene el dominio y el workflow lo copia al sitio publicado. Con publicación por GitHub Actions lo que manda es lo configurado en **Settings → Pages**; el archivo queda como referencia.
 - Si se vuelve a prender el backend de búsqueda, poner `ALLOWED_ORIGIN=https://compracasasuy.com` en su entorno (CORS).
