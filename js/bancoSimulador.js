@@ -192,7 +192,7 @@ function renderBankCompare(principalUSD, years, currency, xRate) {
       if (validateAll()) {
         document.getElementById('calcForm').requestSubmit();
       } else {
-        document.getElementById('calcForm').scrollIntoView({ behavior: 'smooth' });
+        revealFormErrors();
       }
     })
   );
