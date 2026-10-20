@@ -35,39 +35,65 @@ document.addEventListener('DOMContentLoaded', async () => {
   form.addEventListener('submit', onCalculate);
   form.addEventListener('input', () => saveState());
   form.addEventListener('change', () => saveState());
-  await loadExchangeRate();
+  await loadQuotes();
   // Al volver de otra página se rehace la simulación que estaba calculada.
   if (saved?.calculated && validateAll()) onCalculate(null, { scroll: false });
 });
 
-async function loadExchangeRate() {
+async function loadQuotes() {
   const rateInput = document.getElementById('exchangeRate');
+  const uiInput = document.getElementById('uiValue');
   const rateStatus = document.getElementById('rateStatus');
+  const uiStatus = document.getElementById('uiStatus');
 
   rateInput.addEventListener('input', () => {
     exchangeRate = parseFloat(rateInput.value) || null;
   });
 
+  // Lo que ya estaba cargado (simulación guardada) se respeta y no se pide de nuevo.
+  const pending = [];
   if (rateInput.value !== '') {
     exchangeRate = parseFloat(rateInput.value) || null;
     rateStatus.innerHTML = '<span class="text-muted">Cotización que tenías cargada; podés editarla.</span>';
-    return;
-  }
-
-  rateStatus.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Obteniendo cotización…</span>';
-  rateInput.disabled = true;
-
-  const rate = await fetchExchangeRate();
-
-  if (rate !== null) {
-    exchangeRate = rate;
-    rateInput.value = rate.toFixed(2);
-    rateStatus.innerHTML = '<span class="text-success">✓ Cotización de referencia del mercado (open.er-api.com). No es la oficial del BCU; podés editarla.</span>';
   } else {
-    rateStatus.innerHTML = '<span class="text-warning">⚠ No se pudo obtener la cotización — ingresala manualmente.</span>';
-    rateInput.focus();
+    pending.push([rateInput, rateStatus]);
   }
-  rateInput.disabled = false;
+  if (uiInput.value !== '') {
+    uiStatus.innerHTML = '<span class="text-muted">Valor que tenías cargado; podés editarlo.</span>';
+  } else {
+    pending.push([uiInput, uiStatus]);
+  }
+  if (!pending.length) return;
+
+  for (const [input, status] of pending) {
+    status.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Obteniendo cotización…</span>';
+    input.disabled = true;
+  }
+
+  const { usd, ui } = await fetchQuotes();
+
+  if (pending.some(([input]) => input === rateInput)) {
+    if (usd) {
+      exchangeRate = usd.valor;
+      rateInput.value = usd.valor.toFixed(2);
+      rateStatus.innerHTML = usd.fuente === 'BCU'
+        ? `<span class="text-success">✓ Dólar billete del BCU al ${formatDate(usd.fecha)}; podés editarla.</span>`
+        : '<span class="text-success">✓ Cotización de referencia del mercado (open.er-api.com). No es la oficial del BCU; podés editarla.</span>';
+    } else {
+      rateStatus.innerHTML = '<span class="text-warning">⚠ No se pudo obtener la cotización — ingresala manualmente.</span>';
+    }
+    rateInput.disabled = false;
+  }
+  if (pending.some(([input]) => input === uiInput)) {
+    if (ui) {
+      uiInput.value = ui.valor.toFixed(4);
+      uiStatus.innerHTML = `<span class="text-success">✓ Valor del BCU al ${formatDate(ui.fecha)}; podés editarlo.</span>`;
+    } else {
+      uiStatus.innerHTML = '<span class="text-warning">⚠ No se pudo obtener el valor de la UI — ingresalo manualmente.</span>';
+    }
+    uiInput.disabled = false;
+  }
+  if (!usd && !rateInput.value) rateInput.focus();
   validateAll();
   saveState();
 }
