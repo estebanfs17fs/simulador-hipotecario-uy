@@ -53,9 +53,9 @@ async function loadQuotes() {
     { input: document.getElementById('uiValue'), status: document.getElementById('uiStatus'), key: 'ui', digits: 4, label: 'el valor de la UI' },
   ];
   const rateInput = quotes[0].input;
-  exchangeRate = parseFloat(rateInput.value) || null;
+  exchangeRate = readNumber('exchangeRate') || null;
   rateInput.addEventListener('input', () => {
-    exchangeRate = parseFloat(rateInput.value) || null;
+    exchangeRate = readNumber('exchangeRate') || null;
   });
   quotes.forEach(({ input, status }) => {
     input.addEventListener('input', () => {
@@ -80,7 +80,7 @@ async function loadQuotes() {
     if (editedQuotes.has(input.id)) return; // La persona lo cambió mientras se buscaba.
     const q = fetched[key];
     if (q) {
-      input.value = q.valor.toFixed(digits);
+      input.value = q.valor.toFixed(digits).replace('.', ',');
       status.innerHTML = q.fuente === 'BCU'
         ? `<span class="text-success">✓ Valor del BCU al ${formatDate(q.fecha)}; podés editarlo.</span>`
         : '<span class="text-success">✓ Cotización de referencia del mercado (open.er-api.com). No es la oficial del BCU; podés editarla.</span>';
@@ -88,7 +88,7 @@ async function loadQuotes() {
       status.innerHTML = `<span class="text-warning">⚠ No se pudo obtener ${label} del BCU; se usa un valor aproximado. Podés editarlo.</span>`;
     }
   });
-  exchangeRate = parseFloat(rateInput.value) || null;
+  exchangeRate = readNumber('exchangeRate') || null;
   validateAll();
   saveState();
 }
@@ -123,7 +123,7 @@ function applyUrlParams(hasSavedState) {
   const params = new URLSearchParams(window.location.search);
   const tasa = Number(params.get('tasa'));
   if (params.has('tasa') && tasa >= 0 && tasa <= MAX_RATE_LIMIT) {
-    document.getElementById('interestRate').value = tasa.toFixed(2);
+    document.getElementById('interestRate').value = tasa.toFixed(2).replace('.', ',');
   }
   const moneda = params.get('moneda');
   if (CURRENCY_INPUTS[moneda]) setLoanCurrency(moneda);
@@ -235,8 +235,8 @@ function onCalculate(e, { scroll = true } = {}) {
 }
 
 function readNumber(id) {
-  const raw = document.getElementById(id).value;
-  return raw === '' ? NaN : Number(raw);
+  const el = document.getElementById(id);
+  return parseNumberUY(el.value, { thousands: el.dataset.format === 'miles' });
 }
 
 function getInputs() {

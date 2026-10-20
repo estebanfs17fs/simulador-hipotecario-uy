@@ -130,7 +130,7 @@ function syncBank(v) {
     return errors;
   }
   const tna = teaToTna(tramo.tea);
-  document.getElementById('interestRate').value = tna.toFixed(2);
+  document.getElementById('interestRate').value = tna.toFixed(2).replace('.', ',');
   const shortTier = v.minYears >= 1 ? findTier(oferta, v.minYears, amount) : null;
   rateInfo.textContent =
     `TEA ${formatTea(tramo.tea)}${tramo.masIva ? ' + IVA' : ''} de ${banco.nombre} a ${years} años` +
