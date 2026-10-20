@@ -7,19 +7,19 @@ const MAX_RATE_LIMIT = 30;
 
 const SCENARIOS = {
   s1: {
-    title: 'Cuota Mínima — Plazo Extendido',
-    color: 'primary',
+    title: 'Cuota mínima',
+    short: 'Mínima',
     desc: 'El plazo más largo cuya cuota no supera tu cuota mínima.',
   },
   s2: {
-    title: 'Cuota Máxima — Plazo Mínimo',
-    color: 'success',
+    title: 'Cuota máxima',
+    short: 'Máxima',
     desc: 'El plazo más corto cuya cuota no supera tu cuota máxima. Es el que menos intereses paga.',
   },
   s3: {
-    title: 'Escenario Óptimo — Equilibrio',
-    color: 'warning',
-    desc: 'El plazo más corto con una cuota hasta la mitad de tu rango: menos intereses sin llegar al tope del presupuesto.',
+    title: 'Óptimo: equilibrio',
+    short: 'Óptimo',
+    desc: 'El plazo más corto con una cuota hasta la mitad de tu rango: menos intereses sin llegar al tope.',
   },
 };
 
@@ -35,39 +35,65 @@ document.addEventListener('DOMContentLoaded', async () => {
   form.addEventListener('submit', onCalculate);
   form.addEventListener('input', () => saveState());
   form.addEventListener('change', () => saveState());
-  await loadExchangeRate();
+  await loadQuotes();
   // Al volver de otra página se rehace la simulación que estaba calculada.
   if (saved?.calculated && validateAll()) onCalculate(null, { scroll: false });
 });
 
-async function loadExchangeRate() {
+async function loadQuotes() {
   const rateInput = document.getElementById('exchangeRate');
+  const uiInput = document.getElementById('uiValue');
   const rateStatus = document.getElementById('rateStatus');
+  const uiStatus = document.getElementById('uiStatus');
 
   rateInput.addEventListener('input', () => {
     exchangeRate = parseFloat(rateInput.value) || null;
   });
 
+  // Lo que ya estaba cargado (simulación guardada) se respeta y no se pide de nuevo.
+  const pending = [];
   if (rateInput.value !== '') {
     exchangeRate = parseFloat(rateInput.value) || null;
     rateStatus.innerHTML = '<span class="text-muted">Cotización que tenías cargada; podés editarla.</span>';
-    return;
-  }
-
-  rateStatus.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Obteniendo cotización…</span>';
-  rateInput.disabled = true;
-
-  const rate = await fetchExchangeRate();
-
-  if (rate !== null) {
-    exchangeRate = rate;
-    rateInput.value = rate.toFixed(2);
-    rateStatus.innerHTML = '<span class="text-success">✓ Cotización de referencia del mercado (open.er-api.com). No es la oficial del BCU; podés editarla.</span>';
   } else {
-    rateStatus.innerHTML = '<span class="text-warning">⚠ No se pudo obtener la cotización — ingresala manualmente.</span>';
-    rateInput.focus();
+    pending.push([rateInput, rateStatus]);
   }
-  rateInput.disabled = false;
+  if (uiInput.value !== '') {
+    uiStatus.innerHTML = '<span class="text-muted">Valor que tenías cargado; podés editarlo.</span>';
+  } else {
+    pending.push([uiInput, uiStatus]);
+  }
+  if (!pending.length) return;
+
+  for (const [input, status] of pending) {
+    status.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Obteniendo cotización…</span>';
+    input.disabled = true;
+  }
+
+  const { usd, ui } = await fetchQuotes();
+
+  if (pending.some(([input]) => input === rateInput)) {
+    if (usd) {
+      exchangeRate = usd.valor;
+      rateInput.value = usd.valor.toFixed(2);
+      rateStatus.innerHTML = usd.fuente === 'BCU'
+        ? `<span class="text-success">✓ Dólar billete del BCU al ${formatDate(usd.fecha)}; podés editarla.</span>`
+        : '<span class="text-success">✓ Cotización de referencia del mercado (open.er-api.com). No es la oficial del BCU; podés editarla.</span>';
+    } else {
+      rateStatus.innerHTML = '<span class="text-warning">⚠ No se pudo obtener la cotización — ingresala manualmente.</span>';
+    }
+    rateInput.disabled = false;
+  }
+  if (pending.some(([input]) => input === uiInput)) {
+    if (ui) {
+      uiInput.value = ui.valor.toFixed(4);
+      uiStatus.innerHTML = `<span class="text-success">✓ Valor del BCU al ${formatDate(ui.fecha)}; podés editarlo.</span>`;
+    } else {
+      uiStatus.innerHTML = '<span class="text-warning">⚠ No se pudo obtener el valor de la UI — ingresalo manualmente.</span>';
+    }
+    uiInput.disabled = false;
+  }
+  if (!usd && !rateInput.value) rateInput.focus();
   validateAll();
   saveState();
 }
@@ -179,7 +205,14 @@ function onCalculate(e, { scroll = true } = {}) {
   renderScenario('s3', s3, infeasible.s3, 'la cuota de equilibrio (mitad de tu rango)', currency);
 
   const rates = [rate * 0.8, rate, rate * 1.2].map(r => +r.toFixed(2));
-  renderChart(generateChartData(principal, rates, minYears, maxYears, unitValueUYU));
+  document.getElementById('scenariosNote').textContent = `Con tu tasa de ${formatPercent(rate)} y plazos de ${minYears} a ${maxYears} años`;
+  renderChart(generateChartData(principal, rates, minYears, maxYears, unitValueUYU), {
+    mainIndex: 1,
+    band: { min: minPayment, max: maxPayment },
+    points: Object.entries({ s1, s2, s3 })
+      .filter(([, r]) => r)
+      .map(([id, r]) => ({ years: r.years, payment: r.monthlyPaymentUYU, label: SCENARIOS[id].short })),
+  });
 
   renderBankCompare(principalUSD, maxYears, currency, xRate);
 
@@ -216,20 +249,29 @@ function getInputs() {
 // ─── Renderizado ─────────────────────────────────────────────────────────────
 
 function renderSummary(price, downPayment, principalUSD, xRate, currency, principal) {
-  document.getElementById('summaryPrice').textContent = formatUSD(price) + ' / ' + formatUYU(convertUSDtoUYU(price, xRate));
-  document.getElementById('summaryDown').textContent = formatUSD(downPayment) + ' / ' + formatUYU(convertUSDtoUYU(downPayment, xRate));
-  let loan = formatUSD(principalUSD) + ' / ' + formatUYU(convertUSDtoUYU(principalUSD, xRate));
-  if (currency === 'UI') loan += ' / ' + formatUI(principal);
-  document.getElementById('summaryLoan').textContent = loan;
+  const figure = (id, main, sub) => {
+    const el = document.getElementById(id);
+    el.replaceChildren();
+    const value = document.createElement('span');
+    value.className = 'kpi-value';
+    value.textContent = main;
+    const note = document.createElement('span');
+    note.className = 'kpi-sub';
+    note.textContent = sub;
+    el.append(value, note);
+  };
+  figure('summaryPrice', formatUSD(price), formatUYU(convertUSDtoUYU(price, xRate)));
+  figure('summaryDown', formatUSD(downPayment), formatUYU(convertUSDtoUYU(downPayment, xRate)));
+  const loanUYU = formatUYU(convertUSDtoUYU(principalUSD, xRate));
+  figure('summaryLoan', formatUSD(principalUSD), currency === 'UI' ? `${formatUI(principal)} · ${loanUYU}` : loanUYU);
 }
 
 function renderScenario(id, result, infeasible, budgetLabel, currency) {
-  const { title, color, desc } = SCENARIOS[id];
+  const { title, desc } = SCENARIOS[id];
   const card = document.getElementById(id);
-  card.querySelector('.card-title').textContent = title;
+  card.querySelector('.scenario-title').textContent = title;
   card.querySelector('.scenario-desc').textContent = desc;
-  card.className = `card h-100 scenario-card border-${color}`;
-  card.querySelector('.card-header').className = `card-header bg-${color} ${color === 'warning' ? 'text-dark' : 'text-white'}`;
+  card.dataset.feasible = String(Boolean(result));
 
   if (!result) {
     const msg = infeasible
@@ -237,26 +279,27 @@ function renderScenario(id, result, infeasible, budgetLabel, currency) {
         `${formatUYU(infeasible.shortfallUYU)} más que ${budgetLabel} (${formatUYU(infeasible.budgetUYU)}). ` +
         'Probá con un plazo máximo mayor, más aporte inicial o una cuota más alta.'
       : 'No es posible financiar el préstamo con estos parámetros.';
-    card.querySelector('.scenario-body').innerHTML = `<div class="alert alert-danger small mb-0"></div>`;
-    card.querySelector('.scenario-body .alert').textContent = msg;
+    card.querySelector('.scenario-body').innerHTML = '<p class="scenario-none"><strong>No alcanza</strong><span></span></p>';
+    card.querySelector('.scenario-none span').textContent = msg;
     return;
   }
 
   const fmt = amount => formatLoanCurrency(amount, currency);
   const uyuNote = currency === 'UI' ? ' (valor de hoy)' : '';
   // En pesos el monto ya está en UYU; en las otras monedas se agrega su valor en pesos.
-  const inUYU = (amountUYU, cls) => currency === 'UYU' ? '' : `<br><small class="${cls}">${formatUYU(amountUYU)}${uyuNote}</small>`;
+  const inUYU = amountUYU => currency === 'UYU' ? '' : `<small>${formatUYU(amountUYU)}${uyuNote}</small>`;
   card.querySelector('.scenario-body').innerHTML = `
-    <table class="table table-sm mb-0">
-      <tbody>
-        <tr><th>Plazo</th><td>${formatYears(result.years)}</td></tr>
-        <tr><th>Cuota mensual</th><td>${fmt(result.monthlyPayment)}${inUYU(result.monthlyPaymentUYU, 'text-muted')}</td></tr>
-        <tr><th>Total intereses</th><td>${fmt(result.totalInterest)}${inUYU(result.totalInterestUYU, 'text-muted')}</td></tr>
-        <tr class="table-${color}">
-          <th>Total a pagar</th><td>${fmt(result.totalPayment)}${inUYU(result.totalPaymentUYU, '')}</td>
-        </tr>
-      </tbody>
-    </table>`;
+    <div class="scenario-term">Plazo <strong>${formatYears(result.years)}</strong></div>
+    <div class="scenario-figure">${fmt(result.monthlyPayment)}</div>
+    <div class="scenario-sub">por mes${currency === 'UYU' ? '' : ' · ' + formatUYU(result.monthlyPaymentUYU) + uyuNote}</div>
+    <dl class="scenario-rows">
+      <div><dt>Total intereses</dt><dd>${fmt(result.totalInterest)}${inUYU(result.totalInterestUYU)}</dd></div>
+      <div class="is-total"><dt>Total a pagar</dt><dd>${fmt(result.totalPayment)}${inUYU(result.totalPaymentUYU)}</dd></div>
+    </dl>`;
+}
+
+function formatPercent(rate) {
+  return rate.toLocaleString('es-UY', { maximumFractionDigits: 2 }) + ' %';
 }
 
 // ─── Validación en tiempo real ────────────────────────────────────────────────

@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Se republica todos los días para actualizar el dólar y la UI del BCU.
+  schedule:
+    - cron: '0 13 * * *'
 
 permissions:
   contents: read
@@ -26,6 +29,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # Muestra que el servicio del BCU responde; si falla no frena el PR,
+      # la página usa la cotización de respaldo.
+      - name: Probar cotizaciones del BCU
+        continue-on-error: true
+        run: node scripts/cotizaciones.js
 
   test-backend:
     runs-on: ubuntu-latest
@@ -51,8 +59,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Armar el sitio
-        run: mkdir _site && cp -r index.html financiamiento.html 404.html robots.txt sitemap.xml site.webmanifest CNAME css js img _site/
+        run: mkdir _site && cp -r index.html financiamiento.html CNAME css js img _site/
+      - name: Bajar dólar y UI del BCU
+        continue-on-error: true
+        run: node scripts/cotizaciones.js _site/data/cotizaciones.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

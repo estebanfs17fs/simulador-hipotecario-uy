@@ -90,6 +90,8 @@ cd server && npm test       # backend (node --test)
 
 El workflow `.github/workflows/pages.yml` corre los tests en cada PR y, al hacer merge a `main`, publica el sitio en GitHub Pages. Para que funcione hay que activar Pages una vez en **Settings → Pages → Source: GitHub Actions**.
 
+Cada publicación (y una vez por día, a las 10 de Uruguay) baja del BCU el dólar billete y la Unidad Indexada con `scripts/cotizaciones.js` y los publica en `data/cotizaciones.json`, que la página usa para precargar ambos campos. Si el BCU no responde, el dólar se toma de open.er-api.com y la UI se ingresa a mano. Para probarlo en local: `node scripts/cotizaciones.js data/cotizaciones.json`.
+
 El dominio propio (`compracasasuy.com`) y el email `info@` se configuran siguiendo [DOMINIO.md](DOMINIO.md).
 
 ## Estructura
@@ -97,7 +99,8 @@ El dominio propio (`compracasasuy.com`) y el email `info@` se configuran siguien
 | Archivo | Contenido |
 |---|---|
 | `js/calculator.js` | Cálculos puros (cuota, intereses, escenarios), testeados con Jest |
-| `js/api.js` | Cotización y formato de moneda |
+| `js/api.js` | Cotización del dólar y de la UI, y formato de moneda |
+| `scripts/cotizaciones.js` | Baja del BCU el dólar billete y la Unidad Indexada a `data/cotizaciones.json` al publicar |
 | `js/app.js` | Formulario, validaciones y resultados |
 | `js/chartConfig.js` | Gráfica con Chart.js |
 | `js/search.js` | Formulario y resultados de la búsqueda de propiedades |
