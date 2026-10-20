@@ -11,18 +11,25 @@
 <body>
 
   <!-- Navbar -->
-  <nav class="navbar app-navbar mb-4">
+  <nav class="navbar app-navbar">
     <div class="container">
-      <span class="navbar-brand d-flex align-items-center gap-3">
+      <a class="navbar-brand d-flex align-items-center gap-3" href="index.html">
         <img src="img/logo.png" alt="Simulador Hipotecario" class="brand-logo" />
         <span class="brand-country">Uruguay</span>
-      </span>
-      <a class="btn btn-primary btn-sm fw-semibold" href="financiamiento.html" data-track="ir-a-bancos/barra">Bancos y tasas</a>
+      </a>
+      <div class="app-nav">
+        <a href="index.html" aria-current="page">Simulador</a>
+        <a href="financiamiento.html" data-track="ir-a-bancos/barra">Bancos y tasas</a>
+      </div>
     </div>
   </nav>
 
   <div class="container pb-5">
 
+    <header class="page-head">
+      <h1>Simulador de préstamo hipotecario en Uruguay</h1>
+      <p>Calculá la cuota de tu crédito para comprar vivienda en dólares, pesos o unidades indexadas, y compará lo que ofrece cada banco.</p>
+    </header>
 
     <div class="row g-4">
 
@@ -183,76 +190,61 @@
         <div id="results" class="d-none">
 
           <!-- Resumen del préstamo -->
-          <div id="summaryBox" class="p-4 mb-4">
-            <h6 class="text-uppercase text-muted mb-3" style="letter-spacing:.08em;font-size:.78rem;">Resumen del Préstamo</h6>
-            <table class="table table-borderless mb-0" style="color:inherit">
-              <tbody>
-                <tr>
-                  <th>Valor de la propiedad</th>
-                  <td id="summaryPrice"></td>
-                </tr>
-                <tr>
-                  <th>Aporte inicial</th>
-                  <td id="summaryDown"></td>
-                </tr>
-                <tr>
-                  <th>Préstamo solicitado</th>
-                  <td id="summaryLoan" class="fw-bold fs-5"></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Tarjetas de escenarios -->
-          <div class="row g-3 mb-4">
-
-            <div class="col-md-4">
-              <div id="s1" class="card h-100 scenario-card border-primary">
-                <div class="card-header bg-primary text-white">
-                  <span class="card-title"></span>
-                </div>
-                <div class="card-body p-2">
-                  <p class="scenario-desc small text-muted mb-2"></p>
-                  <div class="scenario-body"></div>
-                </div>
-              </div>
+          <section id="summaryBox" class="panel kpi-strip" aria-label="Resumen del préstamo">
+            <div class="kpi">
+              <span class="kpi-label">Valor de la propiedad</span>
+              <span id="summaryPrice"></span>
             </div>
-
-            <div class="col-md-4">
-              <div id="s2" class="card h-100 scenario-card border-success">
-                <div class="card-header bg-success text-white">
-                  <span class="card-title"></span>
-                </div>
-                <div class="card-body p-2">
-                  <p class="scenario-desc small text-muted mb-2"></p>
-                  <div class="scenario-body"></div>
-                </div>
-              </div>
+            <div class="kpi">
+              <span class="kpi-label">Aporte inicial</span>
+              <span id="summaryDown"></span>
             </div>
-
-            <div class="col-md-4">
-              <div id="s3" class="card h-100 scenario-card border-warning">
-                <div class="card-header bg-warning text-dark">
-                  <span class="card-title"></span>
-                </div>
-                <div class="card-body p-2">
-                  <p class="scenario-desc small text-muted mb-2"></p>
-                  <div class="scenario-body"></div>
-                </div>
-              </div>
+            <div class="kpi kpi-lead">
+              <span class="kpi-label">Préstamo solicitado</span>
+              <span id="summaryLoan"></span>
             </div>
+          </section>
 
-          </div>
+          <!-- Escenarios -->
+          <section class="panel scenarios" aria-labelledby="scenariosTitle">
+            <div class="panel-head">
+              <h2 id="scenariosTitle" class="panel-title">Tus tres escenarios</h2>
+              <p id="scenariosNote"></p>
+            </div>
+            <div class="scenario-grid">
+              <article id="s1" class="scenario">
+                <h3 class="scenario-title"></h3>
+                <p class="scenario-desc"></p>
+                <div class="scenario-body"></div>
+              </article>
+              <article id="s2" class="scenario">
+                <h3 class="scenario-title"></h3>
+                <p class="scenario-desc"></p>
+                <div class="scenario-body"></div>
+              </article>
+              <article id="s3" class="scenario">
+                <h3 class="scenario-title"></h3>
+                <p class="scenario-desc"></p>
+                <div class="scenario-body"></div>
+              </article>
+            </div>
+          </section>
 
           <!-- Gráfica -->
-          <div id="chartContainer">
-            <canvas id="hipotecaChart"></canvas>
-          </div>
+          <section id="chartContainer" class="panel" aria-labelledby="chartTitle">
+            <div class="panel-head">
+              <h2 id="chartTitle" class="panel-title">Cuota mensual según el plazo</h2>
+              <ul id="chartLegend" class="chart-legend"></ul>
+            </div>
+            <div class="chart-frame">
+              <canvas id="hipotecaChart" role="img" aria-label="Cuota mensual en pesos para cada plazo, con tu tasa y con una tasa 20 % menor y 20 % mayor"></canvas>
+            </div>
+          </section>
 
           <!-- Comparación de bancos para este préstamo -->
-          <section id="bankCompare" class="card form-card mt-4">
+          <section id="bankCompare" class="card form-card mt-3">
             <div class="card-body p-4">
-              <h5 class="card-title mb-1">¿Qué banco te conviene para este préstamo?</h5>
+              <h2 class="card-title mb-1">¿Qué banco te conviene para este préstamo?</h2>
               <p id="bankCompareIntro" class="text-muted small mb-3"></p>
               <div class="table-responsive">
                 <table class="table table-sm align-middle mb-2">
@@ -272,17 +264,38 @@
         </div>
 
         <!-- Placeholder antes de calcular -->
-        <div id="placeholder" class="text-center text-muted py-5">
-          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-house-door mb-3 opacity-25" viewBox="0 0 16 16">
-            <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 8v6.5A1.5 1.5 0 0 0 3 16h3.5a.5.5 0 0 0 .5-.5V11h2v4.5a.5.5 0 0 0 .5.5H13a1.5 1.5 0 0 0 1.5-1.5V8a.5.5 0 0 0-.146-.354L13 6.207V3.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293z"/>
-          </svg>
-          <p>Completá el formulario para ver los escenarios de financiamiento.</p>
-        </div>
+        <section id="placeholder" class="panel scenarios results-empty" aria-labelledby="placeholderTitle">
+          <div class="panel-head">
+            <h2 id="placeholderTitle" class="panel-title">Tus tres escenarios</h2>
+            <p>Completá el formulario y tocá <strong>Calcular escenarios</strong>.</p>
+          </div>
+          <div class="scenario-grid">
+            <div class="scenario">
+              <p class="scenario-title">Cuota mínima</p>
+              <div class="scenario-term">Plazo <strong>—</strong></div>
+              <div class="scenario-figure is-empty">—</div>
+              <div class="scenario-sub">por mes</div>
+            </div>
+            <div class="scenario">
+              <p class="scenario-title">Cuota máxima</p>
+              <div class="scenario-term">Plazo <strong>—</strong></div>
+              <div class="scenario-figure is-empty">—</div>
+              <div class="scenario-sub">por mes</div>
+            </div>
+            <div class="scenario">
+              <p class="scenario-title">Óptimo: equilibrio</p>
+              <div class="scenario-term">Plazo <strong>—</strong></div>
+              <div class="scenario-figure is-empty">—</div>
+              <div class="scenario-sub">por mes</div>
+            </div>
+          </div>
+          <p class="results-empty-note">Para cada escenario vas a ver el plazo, la cuota de cada mes, cuánto pagás de intereses y qué banco te cobra menos.</p>
+        </section>
 
         <!-- Acceso a la información de financiamiento antes de calcular -->
         <a id="ratesTeaser" href="financiamiento.html" data-track="ir-a-bancos/tarjeta-tasas" class="card form-card text-decoration-none rates-teaser">
           <div class="card-body p-4">
-            <h5 class="card-title text-body mb-2">Tasas hipotecarias hoy en Uruguay</h5>
+            <h2 class="card-title text-body mb-2">Tasas hipotecarias hoy en Uruguay</h2>
             <div id="ratesTeaserList" class="d-flex flex-wrap gap-2 mb-3"></div>
             <p class="small text-muted mb-0">
               Elegí un banco en el formulario para cargar su tasa y sus plazos, o mirá la comparación completa
