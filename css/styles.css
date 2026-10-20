@@ -1,104 +1,367 @@
+/*
+ * Simulador hipotecario: estilo "ledger" (libro de cuentas).
+ * La interfaz va en tinta; el único color (verde azulado de la marca) marca el dato principal:
+ * la curva de tu tasa en la gráfica y los escenarios sobre ella. Bootstrap se adapta con sus variables.
+ */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
 :root {
-  --uy-blue: #0d6efd;
-  --uy-green: #198754;
-  --uy-orange: #fd7e14;
+  --ground: #f2f4f7;      /* gris azulado de planilla */
+  --surface: #ffffff;
+  --raised: #f7f8fa;
+  --active: #eceff3;
+  --border: #e3e6eb;
+  --rule: #edf0f3;
+  --control: #cfd4db;
+  --text: #14213d;        /* azul tinta del logo */
+  --muted: #566070;
+  --accent: #1f7a72;      /* verde azulado del logo, oscurecido para leerse sobre blanco */
+  --accent-soft: rgba(31, 122, 114, .09);
+  --positive: #247b50;
+  --negative: #b4232a;
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --bs-body-font-family: var(--font);
+  --bs-body-font-size: .9375rem;
+  --bs-body-color: var(--text);
+  --bs-body-color-rgb: 20, 33, 61;
+  --bs-body-bg: var(--ground);
+  --bs-emphasis-color: var(--text);
+  --bs-secondary-color: var(--muted);
+  --bs-secondary-color-rgb: 86, 96, 112;
+  --bs-border-color: var(--border);
+  --bs-border-radius: var(--radius-control);
+  --bs-border-radius-sm: 4px;
+  --bs-border-radius-lg: var(--radius-card);
+  --bs-link-color: var(--text);
+  --bs-link-color-rgb: 20, 33, 61;
+  --bs-link-hover-color: var(--accent);
+  --bs-link-hover-color-rgb: 31, 122, 114;
+  --bs-primary: var(--text);
+  --bs-primary-rgb: 20, 33, 61;
+  --bs-success-rgb: 36, 123, 80;
+  --bs-success-text-emphasis: var(--positive);
+  --bs-danger-rgb: 180, 35, 42;
+  --bs-form-invalid-color: var(--negative);
+  --bs-form-invalid-border-color: var(--negative);
 }
 
 body {
-  background: #f8f9fa;
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--ground);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
 }
 
-.navbar-brand {
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
+a { color: var(--text); text-underline-offset: .18em; text-decoration-color: rgba(20, 33, 61, .35); }
+a:hover { text-decoration-color: currentColor; }
+.text-muted { color: var(--muted) !important; }
+.text-primary { color: var(--accent) !important; }
+.text-success { color: var(--positive) !important; }
+.text-danger { color: var(--negative) !important; }
+.small, small { font-size: .8125rem; }
 
-/* Navbar clara: el logo tiene texto azul oscuro */
+/* Cifras en columnas: dígitos de ancho fijo */
+.table, .num, .kpi-value, .scenario-figure, .scenario-rows, .rate-chip,
+input[type="number"] { font-variant-numeric: tabular-nums; }
+
+/* ── Barra superior ── */
 .app-navbar {
-  background: #fff;
-  border-bottom: 1px solid #e5e8ec;
-  box-shadow: 0 1px 6px rgba(0,0,0,.04);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: .5rem 0;
 }
+
+.app-navbar .navbar-brand { margin: 0; padding: 0; text-decoration: none; }
 
 .brand-logo {
-  height: 72px;
+  height: 52px;
   width: auto;
 }
 
 .brand-country {
-  color: #1b2a4e;
-  font-size: 1.1rem;
-  font-weight: 600;
-  padding-left: 1rem;
-  border-left: 2px solid #4fb3a9;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 500;
+  padding-left: .875rem;
+  border-left: 1px solid var(--control);
 }
 
-/* Formulario */
-.form-card {
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+.app-nav {
+  display: flex;
+  gap: .25rem;
 }
+
+.app-nav a {
+  padding: .4375rem .75rem;
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  font-weight: 500;
+  font-size: .875rem;
+  text-decoration: none;
+}
+
+.app-nav a:hover { color: var(--text); background: var(--raised); }
+.app-nav a[aria-current="page"] { color: var(--text); background: var(--active); }
+
+/* ── Encabezado de la página ── */
+.page-head { margin: 2rem 0 1.5rem; max-width: 46rem; }
+.page-head h1 { font-size: 1.625rem; font-weight: 600; letter-spacing: -.01em; margin: 0 0 .375rem; }
+.page-head p { color: var(--muted); margin: 0; font-size: 1rem; }
+.page-title { font-size: 1.625rem; font-weight: 600; letter-spacing: -.01em; }
+section > h2.h5, .card-body > h2.h5 { font-size: 1rem; font-weight: 600 !important; }
+
+/* ── Superficies ── */
+.card, .form-card, .panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: none;
+}
+
+.card-title, .panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.form-card > .card-body > h5.card-title { margin-bottom: 1.25rem !important; }
+
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .25rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-head .panel-title { margin: 0; }
+.panel-head p { margin: 0; color: var(--muted); font-size: .8125rem; }
+
+/* ── Formulario ── */
+.form-label { font-size: .875rem; font-weight: 500 !important; margin-bottom: .375rem; }
+.form-label small, .form-label .small { font-size: .8125rem; }
+
+.form-control, .form-select {
+  min-height: 40px;
+  border-color: var(--control);
+  border-radius: var(--radius-control);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+.form-control::placeholder { color: #6b7280; opacity: 1; }
+
+.form-control:focus, .form-select:focus, .btn:focus-visible, .btn-check:focus-visible + .btn {
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px rgba(20, 33, 61, .12);
+}
+
+.form-control:disabled { background: var(--raised); }
 
 .input-group-text {
-  min-width: 52px;
+  min-width: 48px;
+  justify-content: center;
+  background: var(--raised);
+  border-color: var(--control);
+  color: var(--muted);
+  font-size: .875rem;
+}
+
+#interestRate[readonly] { background: var(--raised); }
+
+/* Selector de moneda: segmentado en tinta */
+.btn-group > .btn-outline-secondary {
+  --bs-btn-color: var(--muted);
+  --bs-btn-border-color: var(--control);
+  --bs-btn-hover-bg: var(--raised);
+  --bs-btn-hover-color: var(--text);
+  --bs-btn-hover-border-color: var(--control);
+  --bs-btn-active-bg: var(--text);
+  --bs-btn-active-border-color: var(--text);
+  --bs-btn-active-color: #fff;
+  --bs-btn-disabled-color: #9aa1ab;
+  --bs-btn-disabled-border-color: var(--control);
+  min-height: 40px;
+  font-weight: 500;
+  font-size: .875rem;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
 }
 
-/* Tarjetas de escenario */
-.scenario-card {
-  border-radius: 10px;
-  transition: transform .15s, box-shadow .15s;
+/* ── Botones: un primario en tinta, el resto neutro ── */
+.btn { font-weight: 500; border-radius: var(--radius-control); }
+
+.btn-primary {
+  --bs-btn-bg: var(--text);
+  --bs-btn-border-color: var(--text);
+  --bs-btn-hover-bg: #0b1428;
+  --bs-btn-hover-border-color: #0b1428;
+  --bs-btn-active-bg: #0b1428;
+  --bs-btn-active-border-color: #0b1428;
+  --bs-btn-disabled-bg: #c9ced6;
+  --bs-btn-disabled-border-color: #c9ced6;
+  --bs-btn-disabled-color: #3d4655;
+  --bs-btn-disabled-opacity: 1;
 }
 
-.scenario-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0,0,0,.12);
+.btn-outline-primary, .app-navbar .btn-outline-secondary {
+  --bs-btn-color: var(--text);
+  --bs-btn-bg: var(--surface);
+  --bs-btn-border-color: var(--control);
+  --bs-btn-hover-color: var(--text);
+  --bs-btn-hover-bg: var(--raised);
+  --bs-btn-hover-border-color: var(--muted);
+  --bs-btn-active-color: var(--text);
+  --bs-btn-active-bg: var(--active);
+  --bs-btn-active-border-color: var(--muted);
 }
 
-.card-header {
-  border-radius: 9px 9px 0 0 !important;
-  font-weight: 600;
-  font-size: .95rem;
-}
+#btnCalcular { min-height: 44px; }
+#formHint:empty { display: none; }
 
-/* Resumen */
-#summaryBox {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #eee;
-  border-radius: 12px;
-}
-
-/* Override Bootstrap CSS variables so table text is visible on dark background */
-#summaryBox .table {
-  --bs-table-color: #fff;
+/* ── Tablas: reglas y alineación ── */
+.table {
   --bs-table-bg: transparent;
-  --bs-table-border-color: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  --bs-table-color: var(--text);
+  --bs-table-border-color: var(--rule);
+  --bs-table-hover-bg: var(--raised);
+  --bs-table-hover-color: var(--text);
 }
 
-#summaryBox th {
-  color: #adb5bd !important;
-  font-weight: 400;
-  font-size: .85rem;
+.table > thead th {
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom-color: var(--border);
+  white-space: nowrap;
 }
 
-#summaryBox td {
-  color: #fff !important;
+.table-primary, .table-success {
+  --bs-table-bg: var(--active);
+  --bs-table-color: var(--text);
+  --bs-table-border-color: var(--border);
+}
+
+/* Tablas de bancos: cifras a la derecha */
+#bankCompare table th:nth-child(n+2):nth-child(-n+4),
+#bankCompare table td:nth-child(n+2):nth-child(-n+4):not([colspan]),
+#compareTable th:nth-child(n+2):nth-child(-n+4),
+#compareTable td:nth-child(n+2):nth-child(-n+4):not([colspan]) { text-align: right; }
+
+/* ── Etiquetas: tintes pálidos con tinta del mismo tono ── */
+.badge { font-weight: 500; font-size: .75rem; padding: .3em .55em; border-radius: 4px; }
+.badge.text-bg-primary { background: #e6f2f0 !important; color: #10443f !important; }
+.badge.text-bg-success { background: #dcf5e6 !important; color: #0f3d24 !important; }
+.badge.text-bg-secondary, .badge.text-bg-light { background: var(--active) !important; color: var(--text) !important; border: 0 !important; }
+.badge.text-bg-warning { background: #fff7e0 !important; color: #7a4a06 !important; }
+.badge.text-bg-danger { background: #ffedea !important; color: #831c1e !important; }
+
+/* ── Avisos ── */
+.alert { border-radius: var(--radius-card); }
+.alert-info, .alert-primary {
+  --bs-alert-bg: var(--surface);
+  --bs-alert-border-color: var(--border);
+  --bs-alert-color: var(--text);
+  --bs-alert-link-color: var(--text);
+}
+
+/* ── Resultados: resumen del préstamo ── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.kpi { padding: 1.125rem 1.25rem; min-width: 0; }
+.kpi + .kpi { border-left: 1px solid var(--border); }
+.kpi-label { display: block; font-size: .8125rem; color: var(--muted); margin-bottom: .25rem; }
+.kpi-value { display: block; font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
+.kpi-sub { display: block; font-size: .8125rem; color: var(--muted); }
+
+/* ── Resultados: los tres escenarios ── */
+.scenarios { margin-bottom: 1rem; }
+.scenarios .panel-head { padding: 1.125rem 1.25rem 0; margin-bottom: .75rem; }
+
+.scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--border);
+}
+
+.scenario { padding: 1.125rem 1.25rem 1.25rem; min-width: 0; }
+.scenario + .scenario { border-left: 1px solid var(--border); }
+
+.scenario-title {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .9375rem;
   font-weight: 600;
+  margin: 0 0 .25rem;
 }
 
-/* Gráfica */
-#chartContainer {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.06);
-  padding: 20px;
+/* El punto es la misma marca que el escenario tiene en la gráfica */
+.scenario-title::before {
+  content: '';
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--accent);
 }
+
+.scenario[data-feasible="true"] .scenario-title::before { background: var(--accent); }
+
+.scenario-desc { font-size: .8125rem; color: var(--muted); margin: 0 0 1rem; min-height: 3.6em; }
+
+.scenario-term { font-size: .875rem; color: var(--muted); margin-bottom: .125rem; }
+.scenario-term strong { color: var(--text); font-weight: 600; }
+
+.scenario-figure { font-size: 1.75rem; font-weight: 600; line-height: 1.2; letter-spacing: -.01em; }
+.scenario-figure .unit { font-size: .875rem; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-left: .2em; }
+.scenario-sub { font-size: .8125rem; color: var(--muted); margin-top: .125rem; }
+
+.scenario-rows { margin: 1rem 0 0; font-size: .875rem; }
+.scenario-rows > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .75rem;
+  padding: .5rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.scenario-rows dt { font-weight: 400; color: var(--muted); white-space: nowrap; }
+.scenario-rows dd { margin: 0; text-align: right; font-weight: 500; }
+.scenario-rows dd small { display: block; color: var(--muted); font-weight: 400; }
+.scenario-rows .is-total dt { color: var(--text); font-weight: 500; }
+.scenario-rows .is-total dd { font-weight: 600; }
+
+.scenario-none { font-size: .875rem; color: var(--text); margin: 0; padding: .75rem .875rem; border: 1px dashed var(--control); border-radius: var(--radius-control); }
+.scenario-none strong { color: var(--negative); font-weight: 600; display: block; margin-bottom: .25rem; }
+
+/* ── Gráfica ── */
+#chartContainer { padding: 1.125rem 1.25rem 1rem; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: .25rem 1rem; list-style: none; margin: 0; padding: 0; font-size: .8125rem; color: var(--muted); }
+.chart-legend li { display: inline-flex; align-items: center; gap: .4rem; }
+.chart-legend .swatch { display: inline-block; width: 16px; height: 0; border-top: 2px solid #9aa1ab; }
+.chart-legend .swatch-main { border-top-width: 3px; border-color: var(--accent); }
+.chart-legend .swatch-band { height: 10px; border: 0; background: var(--accent-soft); outline: 1px solid rgba(31, 122, 114, .25); }
+.chart-frame { position: relative; height: 300px; }
+
+/* ── Antes de calcular ── */
+.results-empty .scenario-title::before { border-color: var(--control); }
+.scenario-figure.is-empty { color: #8a919c; font-weight: 400; }
+.results-empty-note { margin: 0; padding: .875rem 1.25rem; border-top: 1px solid var(--border); font-size: .8125rem; color: var(--muted); }
 
 /* Spinner cotización */
 #rateStatus {
-  font-size: .82rem;
+  font-size: .8125rem;
   min-height: 1.4em;
 }
 
@@ -110,9 +373,9 @@ body {
   max-height: 220px;
   overflow-y: auto;
   padding: .75rem 1rem;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  background: var(--surface);
 }
 
 .source-badge {
@@ -121,27 +384,33 @@ body {
 }
 
 .property-card {
-  border-radius: 10px;
   overflow: hidden;
-  transition: transform .15s, box-shadow .15s;
+  transition: border-color .15s;
 }
 
-.property-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0,0,0,.12);
-}
+.property-card:hover { border-color: var(--muted); }
 
 .property-card .card-img-top {
   height: 170px;
   object-fit: cover;
-  background: #e9ecef;
+  background: var(--active);
 }
 
 /* Responsive */
 @media (max-width: 767px) {
-  .scenario-card { margin-bottom: 1rem; }
-  #summaryBox td { font-size: .9rem; }
-  .brand-logo { height: 56px; }
+  .brand-logo { height: 44px; }
+  .brand-country { display: none; }
+  .page-head { margin: 1.25rem 0 1rem; }
+  .page-head h1 { font-size: 1.375rem; }
+  .kpi-strip { grid-template-columns: 1fr 1fr; }
+  .kpi { padding: .875rem 1rem; }
+  .kpi-value { font-size: 1.0625rem; }
+  .kpi-strip .kpi-lead { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--border); }
+  .kpi:nth-child(2) { border-left: 1px solid var(--border); }
+  .scenario-grid { grid-template-columns: 1fr; }
+  .scenario + .scenario { border-left: 0; border-top: 1px solid var(--border); }
+  .scenario-desc { min-height: 0; }
+  .chart-frame { height: 220px; }
 }
 
 /* Página de financiamiento */
@@ -151,14 +420,14 @@ body {
   gap: .5rem 1.25rem;
 }
 
+.fin-index a { color: var(--muted); text-decoration: none; font-weight: 500; }
+.fin-index a:hover { color: var(--text); }
+
 .rates-table th[scope="rowgroup"] {
   vertical-align: top;
 }
 
-.bank-card {
-  border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.06);
-}
+.bank-card { box-shadow: none; }
 
 .tips-list li + li {
   margin-top: .5rem;
@@ -167,31 +436,28 @@ body {
 /* Banco y tasas en el simulador */
 .rates-teaser {
   margin-top: 1rem;
-  transition: box-shadow .15s;
+  transition: border-color .15s;
 }
 
 .rates-teaser:hover,
 .rates-teaser:focus-visible {
-  box-shadow: 0 6px 20px rgba(0,0,0,.12);
+  border-color: var(--muted);
 }
 
 .rate-chip {
-  font-size: .85rem;
+  font-size: .8125rem;
   padding: .25rem .6rem;
-  border: 1px solid #dee2e6;
-  border-radius: 999px;
-  background: #fff;
-  color: #1b2a4e;
-  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--raised);
+  color: var(--text);
 }
 
-#interestRate[readonly] {
-  background: #eef4ff;
-}
+.rate-chip strong { font-weight: 600; }
 
 /* Tarjeta de banco enlazada desde el simulador */
 .col-md-6:target .bank-card {
-  outline: 3px solid #0d6efd;
+  outline: 2px solid var(--text);
   outline-offset: 2px;
 }
 
@@ -200,7 +466,7 @@ body {
   position: sticky;
   top: .5rem;
   z-index: 10;
-  box-shadow: 0 4px 14px rgba(0,0,0,.08);
+  box-shadow: 0 4px 14px rgba(20, 33, 61, .08);
 }
 
 [id^="banco-"] {
