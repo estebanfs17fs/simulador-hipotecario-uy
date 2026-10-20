@@ -181,7 +181,13 @@ function restoreState() {
 
 function onCalculate(e, { scroll = true } = {}) {
   if (e) e.preventDefault();
-  if (!validateAll()) return;
+  if (!validateAll()) {
+    if (e) {
+      track('calcular/incompleto');
+      revealFormErrors();
+    }
+    return;
+  }
   // Solo cuenta los cálculos que pide el usuario, no el que se rehace al volver.
   if (e) track(`calcular/${getLoanCurrency()}/${document.getElementById('bankSelect').value || 'sin-banco'}`);
 
@@ -303,16 +309,28 @@ function formatPercent(rate) {
 }
 
 // ─── Validación en tiempo real ────────────────────────────────────────────────
+// Los nombres de los campos y los textos están en js/validacion.js.
+
+// Un campo vacío se marca en rojo recién cuando el usuario lo dejó o intentó calcular.
+const touchedFields = new Set();
+let submitAttempted = false;
 
 function initValidation() {
-  const fields = ['propertyPrice', 'downPayment', 'exchangeRate', 'uiValue', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment'];
-  fields.forEach(id => document.getElementById(id).addEventListener('input', validateAll));
+  FORM_FIELDS.forEach(({ id }) => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', validateAll);
+    el.addEventListener('blur', () => {
+      touchedFields.add(id);
+      validateAll();
+    });
+  });
   validateAll();
 }
 
 /**
- * Marca los campos inválidos y habilita "Calcular" solo si todo está completo y es coherente.
- * Un campo vacío no se marca en rojo, pero mantiene el botón deshabilitado.
+ * Marca los campos inválidos o vacíos y dice cuáles faltan para calcular.
+ * El botón "Calcular" queda siempre habilitado: si falta algo, al tocarlo se
+ * marcan los campos y se lleva el foco al primero.
  */
 function validateAll() {
   // Con un banco elegido, primero se carga su tasa para validar con ella.
@@ -344,24 +362,40 @@ function validateAll() {
     if (!errors[id]) errors[id] = msg;
   });
 
-  ['bankSelect', 'propertyPrice', 'downPayment', 'exchangeRate', 'uiValue', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment']
-    .forEach(id => setFieldError(id, errors[id]));
+  const missing = findMissingFields(v);
+  const invalid = FORM_FIELDS.map(f => f.id).filter(id => errors[id]);
+  const shown = { ...errors };
+  missing.forEach(id => {
+    if (submitAttempted || touchedFields.has(id)) shown[id] = MISSING_MSG;
+  });
+  FORM_FIELDS.forEach(({ id }) => setFieldError(id, shown[id]));
 
-  const required = [v.price, v.downPayment, v.xRate, v.rate, v.minYears, v.maxYears, v.minPayment, v.maxPayment];
-  if (v.currency === 'UI') required.push(v.uiValue);
-  const complete = required.every(filled);
-  const valid = complete && Object.keys(errors).length === 0;
-
-  document.getElementById('btnCalcular').disabled = !valid;
-  document.getElementById('formHint').textContent = !complete
-    ? 'Completá todos los campos para calcular.'
-    : valid ? '' : 'Corregí los campos marcados en rojo.';
+  const valid = missing.length === 0 && invalid.length === 0;
+  const hint = document.getElementById('formHint');
+  hint.textContent = formHintText(missing, invalid);
+  hint.classList.toggle('text-danger', submitAttempted && !valid);
+  hint.classList.toggle('text-muted', !(submitAttempted && !valid));
   return valid;
+}
+
+/** Marca todo lo que falta o está mal y lleva el foco al primer campo con problema. */
+function revealFormErrors() {
+  submitAttempted = true;
+  validateAll();
+  const first = FORM_FIELDS.map(f => document.getElementById(f.id)).find(el => el.classList.contains('is-invalid'));
+  if (!first) return;
+  first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  first.focus({ preventScroll: true });
 }
 
 function setFieldError(id, msg) {
   const el = document.getElementById(id);
   const fb = el.parentElement.querySelector('.invalid-feedback');
   el.classList.toggle('is-invalid', Boolean(msg));
-  if (fb) fb.textContent = msg || '';
+  el.setAttribute('aria-invalid', msg ? 'true' : 'false');
+  if (!fb) return;
+  fb.id = `${id}Feedback`;
+  fb.textContent = msg || '';
+  if (msg) el.setAttribute('aria-describedby', fb.id);
+  else el.removeAttribute('aria-describedby');
 }
