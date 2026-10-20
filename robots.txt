@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://compracasasuy.com/sitemap.xml

@@ -3,10 +3,90 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Simulador Hipotecario Uruguay</title>
+  <title>Simulador de préstamo hipotecario Uruguay | Calculá tu cuota en USD, pesos o UI</title>
+  <meta name="description" content="Simulador de crédito hipotecario para Uruguay: calculá la cuota mensual en dólares, pesos o unidades indexadas para distintos plazos y compará las tasas de BHU, Santander, Itaú, BBVA, Scotiabank y BTG Pactual. Gratis y sin registro." />
+  <link rel="canonical" href="https://compracasasuy.com/" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="theme-color" content="#1b2a4e" />
+  <meta name="geo.region" content="UY" />
+
+  <!-- Vista previa al compartir (WhatsApp, Facebook, LinkedIn, X) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_UY" />
+  <meta property="og:site_name" content="Simulador Hipotecario Uruguay" />
+  <meta property="og:title" content="Simulador de préstamo hipotecario en Uruguay" />
+  <meta property="og:description" content="Calculá tu cuota en dólares, pesos o UI y compará las tasas de los bancos uruguayos. Gratis y sin registro." />
+  <meta property="og:url" content="https://compracasasuy.com/" />
+  <meta property="og:image" content="https://compracasasuy.com/img/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Simulador Hipotecario Uruguay: simulá tu préstamo para comprar vivienda" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" type="image/png" href="img/favicon.png" />
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
+
+  <!-- Datos estructurados para Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://compracasasuy.com/#website",
+        "url": "https://compracasasuy.com/",
+        "name": "Simulador Hipotecario Uruguay",
+        "inLanguage": "es-UY"
+      },
+      {
+        "@type": "WebApplication",
+        "name": "Simulador de préstamo hipotecario Uruguay",
+        "url": "https://compracasasuy.com/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "es-UY",
+        "isAccessibleForFree": true,
+        "areaServed": { "@type": "Country", "name": "Uruguay" },
+        "description": "Calculá la cuota de un crédito hipotecario en dólares, pesos o unidades indexadas y compará las tasas de los bancos de Uruguay.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "UYU" }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Cómo se calcula la cuota de un préstamo hipotecario?",
+            "acceptedAnswer": { "@type": "Answer", "text": "La cuota depende del monto del préstamo (precio de la vivienda menos tu aporte), la tasa de interés anual y el plazo. Con el sistema francés la cuota es fija en la moneda del préstamo: al principio pagás más intereses y al final más capital. El simulador la calcula para varios plazos a la vez." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Conviene un préstamo hipotecario en dólares, pesos o unidades indexadas?",
+            "acceptedAnswer": { "@type": "Answer", "text": "En dólares la cuota es fija en USD pero depende del tipo de cambio si cobrás en pesos. En unidades indexadas (UI) la cuota en pesos se ajusta con la inflación, y suele permitir financiar más. En pesos nominales la cuota no cambia, pero hay menos ofertas. En el simulador podés elegir la moneda del préstamo y ver cómo cambia la cuota." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Cuánto aporte inicial necesito para comprar una vivienda en Uruguay?",
+            "acceptedAnswer": { "@type": "Answer", "text": "La mayoría de los bancos financia entre el 80% y el 90% del valor de la vivienda, así que necesitás un ahorro previo de entre el 10% y el 20% más los gastos de escrituración e impuestos. El BHU puede financiar más si sos ahorrista." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Qué ingreso necesito para que me den el préstamo?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Los bancos en Uruguay suelen pedir que la cuota no supere entre el 25% y el 30% de tu ingreso líquido del hogar. Con tu cuota máxima, el simulador te dice hasta qué precio de vivienda podés pagar." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Qué es la unidad indexada (UI)?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Es una unidad de cuenta que publica el Instituto Nacional de Estadística (INE) y que se ajusta todos los días según la inflación (IPC). Un préstamo en UI mantiene su valor real: la cuota en UI es fija, pero en pesos sube con los precios." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 
@@ -23,6 +103,10 @@
 
   <div class="container pb-5">
 
+    <header class="mb-4">
+      <h1 class="h3 fw-bold mb-1">Simulador de préstamo hipotecario en Uruguay</h1>
+      <p class="text-muted mb-0">Calculá la cuota de tu crédito para comprar vivienda en dólares, pesos o unidades indexadas, y compará lo que ofrece cada banco.</p>
+    </header>
 
     <div class="row g-4">
 
@@ -362,6 +446,33 @@
         <div id="searchSources"></div>
         <div id="searchResults" class="row g-3 mt-1"></div>
         </div>
+      </div>
+    </section>
+    <!-- ── Preguntas frecuentes (el mismo texto está en los datos estructurados del <head>) ── -->
+    <section id="preguntas" class="card form-card mt-4">
+      <div class="card-body p-4">
+        <h2 class="h5 card-title mb-3">Preguntas frecuentes sobre préstamos hipotecarios en Uruguay</h2>
+        <details class="faq-item">
+          <summary>¿Cómo se calcula la cuota de un préstamo hipotecario?</summary>
+          <p>La cuota depende del monto del préstamo (precio de la vivienda menos tu aporte), la tasa de interés anual y el plazo. Con el sistema francés la cuota es fija en la moneda del préstamo: al principio pagás más intereses y al final más capital. El simulador la calcula para varios plazos a la vez.</p>
+        </details>
+        <details class="faq-item">
+          <summary>¿Conviene un préstamo hipotecario en dólares, pesos o unidades indexadas?</summary>
+          <p>En dólares la cuota es fija en USD pero depende del tipo de cambio si cobrás en pesos. En unidades indexadas (UI) la cuota en pesos se ajusta con la inflación, y suele permitir financiar más. En pesos nominales la cuota no cambia, pero hay menos ofertas. En el simulador podés elegir la moneda del préstamo y ver cómo cambia la cuota.</p>
+        </details>
+        <details class="faq-item">
+          <summary>¿Cuánto aporte inicial necesito para comprar una vivienda en Uruguay?</summary>
+          <p>La mayoría de los bancos financia entre el 80% y el 90% del valor de la vivienda, así que necesitás un ahorro previo de entre el 10% y el 20% más los gastos de escrituración e impuestos. El BHU puede financiar más si sos ahorrista.</p>
+        </details>
+        <details class="faq-item">
+          <summary>¿Qué ingreso necesito para que me den el préstamo?</summary>
+          <p>Los bancos en Uruguay suelen pedir que la cuota no supere entre el 25% y el 30% de tu ingreso líquido del hogar. Con tu cuota máxima, el simulador te dice hasta qué precio de vivienda podés pagar.</p>
+        </details>
+        <details class="faq-item">
+          <summary>¿Qué es la unidad indexada (UI)?</summary>
+          <p>Es una unidad de cuenta que publica el Instituto Nacional de Estadística (INE) y que se ajusta todos los días según la inflación (IPC). Un préstamo en UI mantiene su valor real: la cuota en UI es fija, pero en pesos sube con los precios.</p>
+        </details>
+        <p class="small text-muted mt-3 mb-0">¿Querés ver tasas y requisitos banco por banco? Mirá la <a href="financiamiento.html">comparación de préstamos hipotecarios</a>.</p>
       </div>
     </section>
   </div>
