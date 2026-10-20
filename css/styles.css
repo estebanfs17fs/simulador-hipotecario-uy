@@ -143,6 +143,7 @@ section > h2.h5, .card-body > h2.h5 { font-size: 1rem; font-weight: 600 !importa
 /* ── Formulario ── */
 .form-label { font-size: .875rem; font-weight: 500 !important; margin-bottom: .375rem; }
 .form-label small, .form-label .small { font-size: .8125rem; }
+.req { color: var(--negative); font-weight: 600; }
 
 .form-control, .form-select {
   min-height: 40px;
