@@ -126,7 +126,7 @@
                 <label class="form-label fw-semibold" for="propertyPrice">Precio de la propiedad <span class="req" aria-hidden="true">*</span></label>
                 <div class="input-group">
                   <span class="input-group-text">US$</span>
-                  <input type="number" id="propertyPrice" class="form-control" value="150000" min="1" step="1000" required />
+                  <input type="text" inputmode="decimal" autocomplete="off" data-format="miles" id="propertyPrice" class="form-control" value="150.000" required />
                   <div class="invalid-feedback"></div>
                 </div>
               </div>
@@ -136,7 +136,7 @@
                 <label class="form-label fw-semibold" for="downPayment">Aporte inicial <span class="req" aria-hidden="true">*</span></label>
                 <div class="input-group">
                   <span class="input-group-text">US$</span>
-                  <input type="number" id="downPayment" class="form-control" value="30000" min="0" step="1000" required />
+                  <input type="text" inputmode="decimal" autocomplete="off" data-format="miles" id="downPayment" class="form-control" value="30.000" required />
                   <div class="invalid-feedback"></div>
                 </div>
               </div>
@@ -149,7 +149,7 @@
                 </label>
                 <div class="input-group">
                   <span class="input-group-text">$</span>
-                  <input type="number" id="exchangeRate" class="form-control" value="40.00" min="0.01" step="0.01" required />
+                  <input type="text" inputmode="decimal" autocomplete="off" id="exchangeRate" class="form-control" value="40,00" required />
                   <div class="invalid-feedback"></div>
                 </div>
                 <div id="rateStatus" class="mt-1"></div>
@@ -193,7 +193,7 @@
                 </label>
                 <div class="input-group">
                   <span class="input-group-text">$</span>
-                  <input type="number" id="uiValue" class="form-control" value="6.67" min="0.0001" step="0.0001" required />
+                  <input type="text" inputmode="decimal" autocomplete="off" id="uiValue" class="form-control" value="6,67" required />
                   <div class="invalid-feedback"></div>
                 </div>
                 <div id="uiStatus" class="mt-1"></div>
@@ -206,7 +206,7 @@
                   Tasa de interés anual (TNA) <span class="req" aria-hidden="true">*</span>
                 </label>
                 <div class="input-group">
-                  <input type="number" id="interestRate" class="form-control" value="3.75" min="0" max="30" step="0.01" required />
+                  <input type="text" inputmode="decimal" autocomplete="off" id="interestRate" class="form-control" value="3,75" required />
                   <span class="input-group-text">%</span>
                   <div class="invalid-feedback"></div>
                 </div>
@@ -241,7 +241,7 @@
                   <div class="col-6">
                     <div class="input-group">
                       <span class="input-group-text">$</span>
-                      <input type="number" id="minPayment" class="form-control" value="25000" min="1" step="500" required />
+                      <input type="text" inputmode="decimal" autocomplete="off" data-format="miles" id="minPayment" class="form-control" value="25.000" required />
                       <div class="invalid-feedback"></div>
                     </div>
                     <small class="text-muted">Mínima</small>
@@ -249,7 +249,7 @@
                   <div class="col-6">
                     <div class="input-group">
                       <span class="input-group-text">$</span>
-                      <input type="number" id="maxPayment" class="form-control" value="55000" min="1" step="500" required />
+                      <input type="text" inputmode="decimal" autocomplete="off" data-format="miles" id="maxPayment" class="form-control" value="55.000" required />
                       <div class="invalid-feedback"></div>
                     </div>
                     <small class="text-muted">Máxima</small>
