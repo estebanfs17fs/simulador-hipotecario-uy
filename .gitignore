@@ -2,3 +2,4 @@ node_modules/
 coverage/
 .playwright-cli/
 .taste-skill/
+data/
