@@ -40,60 +40,55 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (saved?.calculated && validateAll()) onCalculate(null, { scroll: false });
 });
 
-async function loadQuotes() {
-  const rateInput = document.getElementById('exchangeRate');
-  const uiInput = document.getElementById('uiValue');
-  const rateStatus = document.getElementById('rateStatus');
-  const uiStatus = document.getElementById('uiStatus');
+// Cotizaciones que la persona escribió a mano: esas no se pisan con las del BCU.
+const editedQuotes = new Set();
 
+/**
+ * El dólar y la UI arrancan con un valor aproximado (el del HTML) para que se
+ * pueda calcular enseguida, y se reemplazan por los del BCU apenas llegan.
+ */
+async function loadQuotes() {
+  const quotes = [
+    { input: document.getElementById('exchangeRate'), status: document.getElementById('rateStatus'), key: 'usd', digits: 2, label: 'la cotización' },
+    { input: document.getElementById('uiValue'), status: document.getElementById('uiStatus'), key: 'ui', digits: 4, label: 'el valor de la UI' },
+  ];
+  const rateInput = quotes[0].input;
+  exchangeRate = parseFloat(rateInput.value) || null;
   rateInput.addEventListener('input', () => {
     exchangeRate = parseFloat(rateInput.value) || null;
   });
+  quotes.forEach(({ input, status }) => {
+    input.addEventListener('input', () => {
+      editedQuotes.add(input.id);
+      status.innerHTML = '<span class="text-muted">Valor cargado por vos.</span>';
+      saveState();
+    });
+  });
 
-  // Lo que ya estaba cargado (simulación guardada) se respeta y no se pide de nuevo.
-  const pending = [];
-  if (rateInput.value !== '') {
-    exchangeRate = parseFloat(rateInput.value) || null;
-    rateStatus.innerHTML = '<span class="text-muted">Cotización que tenías cargada; podés editarla.</span>';
-  } else {
-    pending.push([rateInput, rateStatus]);
-  }
-  if (uiInput.value !== '') {
-    uiStatus.innerHTML = '<span class="text-muted">Valor que tenías cargado; podés editarlo.</span>';
-  } else {
-    pending.push([uiInput, uiStatus]);
-  }
+  const pending = quotes.filter(q => !editedQuotes.has(q.input.id));
+  quotes.filter(q => editedQuotes.has(q.input.id)).forEach(({ status }) => {
+    status.innerHTML = '<span class="text-muted">Valor que tenías cargado; podés editarlo.</span>';
+  });
   if (!pending.length) return;
+  pending.forEach(({ status }) => {
+    status.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Buscando el valor del BCU…</span>';
+  });
 
-  for (const [input, status] of pending) {
-    status.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Obteniendo cotización…</span>';
-    input.disabled = true;
-  }
+  const fetched = await fetchQuotes();
 
-  const { usd, ui } = await fetchQuotes();
-
-  if (pending.some(([input]) => input === rateInput)) {
-    if (usd) {
-      exchangeRate = usd.valor;
-      rateInput.value = usd.valor.toFixed(2);
-      rateStatus.innerHTML = usd.fuente === 'BCU'
-        ? `<span class="text-success">✓ Dólar billete del BCU al ${formatDate(usd.fecha)}; podés editarla.</span>`
+  pending.forEach(({ input, status, key, digits, label }) => {
+    if (editedQuotes.has(input.id)) return; // La persona lo cambió mientras se buscaba.
+    const q = fetched[key];
+    if (q) {
+      input.value = q.valor.toFixed(digits);
+      status.innerHTML = q.fuente === 'BCU'
+        ? `<span class="text-success">✓ Valor del BCU al ${formatDate(q.fecha)}; podés editarlo.</span>`
         : '<span class="text-success">✓ Cotización de referencia del mercado (open.er-api.com). No es la oficial del BCU; podés editarla.</span>';
     } else {
-      rateStatus.innerHTML = '<span class="text-warning">⚠ No se pudo obtener la cotización — ingresala manualmente.</span>';
+      status.innerHTML = `<span class="text-warning">⚠ No se pudo obtener ${label} del BCU; se usa un valor aproximado. Podés editarlo.</span>`;
     }
-    rateInput.disabled = false;
-  }
-  if (pending.some(([input]) => input === uiInput)) {
-    if (ui) {
-      uiInput.value = ui.valor.toFixed(4);
-      uiStatus.innerHTML = `<span class="text-success">✓ Valor del BCU al ${formatDate(ui.fecha)}; podés editarlo.</span>`;
-    } else {
-      uiStatus.innerHTML = '<span class="text-warning">⚠ No se pudo obtener el valor de la UI — ingresalo manualmente.</span>';
-    }
-    uiInput.disabled = false;
-  }
-  if (!usd && !rateInput.value) rateInput.focus();
+  });
+  exchangeRate = parseFloat(rateInput.value) || null;
   validateAll();
   saveState();
 }
@@ -143,6 +138,7 @@ function applyUrlParams(hasSavedState) {
 
 const STATE_KEY = 'simuladorHipotecario';
 const STATE_FIELDS = ['propertyPrice', 'downPayment', 'exchangeRate', 'uiValue', 'interestRate', 'minYears', 'maxYears', 'minPayment', 'maxPayment'];
+const QUOTE_FIELDS = ['exchangeRate', 'uiValue'];
 let simulationCalculated = false;
 
 function saveState() {
@@ -150,6 +146,7 @@ function saveState() {
     currency: getLoanCurrency(),
     bank: document.getElementById('bankSelect').value,
     calculated: simulationCalculated,
+    editedQuotes: [...editedQuotes],
   };
   STATE_FIELDS.forEach(id => { state[id] = document.getElementById(id).value; });
   try {
@@ -168,8 +165,13 @@ function restoreState() {
     return null;
   }
   if (!state) return null;
+  if (Array.isArray(state.editedQuotes)) state.editedQuotes.forEach(id => editedQuotes.add(id));
   STATE_FIELDS.forEach(id => {
-    if (typeof state[id] === 'string') document.getElementById(id).value = state[id];
+    // Un campo vacío deja el valor por defecto, y las cotizaciones se vuelven a
+    // pedir al BCU salvo que la persona las haya escrito.
+    if (typeof state[id] !== 'string' || state[id] === '') return;
+    if (QUOTE_FIELDS.includes(id) && !editedQuotes.has(id)) return;
+    document.getElementById(id).value = state[id];
   });
   if (CURRENCY_INPUTS[state.currency]) setLoanCurrency(state.currency);
   if (state.bank) selectBank(state.bank, 'clamp');
