@@ -97,7 +97,7 @@ async function main() {
     await scenario(browser, baseUrl, 'valores por defecto en computadora', desktop, async page => {
       check(await page.inputValue('#propertyPrice') !== '', 'el precio viene cargado');
       check(await page.isEnabled('#btnCalcular'), 'el botón Calcular está habilitado');
-      check(typeof (await page.evaluate(() => window.Chart)) !== 'undefined', 'cargó Chart.js');
+      check(await page.evaluate(() => typeof window.Chart === 'function'), 'cargó Chart.js');
       const figure = await calculate(page);
       check(/US\$/.test(figure), `la cuota óptima está en dólares (${figure})`);
     });
