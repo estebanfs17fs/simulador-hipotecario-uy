@@ -62,7 +62,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit firefox
       - name: Armar el sitio
         run: mkdir _site && cp -r index.html financiamiento.html 404.html robots.txt sitemap.xml site.webmanifest CNAME css js img _site/
       - name: Bajar dólar y UI del BCU
@@ -109,7 +109,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit firefox
       - name: Probar compracasasuy.com
         run: |
           # GitHub Pages puede tardar un poco en servir la versión nueva.

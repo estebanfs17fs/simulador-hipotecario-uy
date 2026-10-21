@@ -12,7 +12,7 @@
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
-const { chromium } = require('playwright');
+const playwright = require('playwright');
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css',
@@ -78,63 +78,85 @@ async function calculate(page) {
   return figure.trim();
 }
 
+async function runScenarios(browser, engine, baseUrl, expectBcu) {
+  const desktop = { viewport: { width: 1280, height: 900 } };
+  // Firefox no emula celulares; ahí se prueba solo el ancho de pantalla.
+  const mobile = engine === 'firefox'
+    ? { viewport: { width: 390, height: 844 } }
+    : { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
+  const name = text => `${engine}: ${text}`;
+
+  await scenario(browser, baseUrl, name('valores por defecto en computadora'), desktop, async page => {
+    check(await page.inputValue('#propertyPrice') !== '', 'el precio viene cargado');
+    check(await page.isEnabled('#btnCalcular'), 'el botón Calcular está habilitado');
+    check(await page.evaluate(() => typeof window.Chart === 'function'), 'cargó Chart.js');
+    const figure = await calculate(page);
+    check(/US\$/.test(figure), `la cuota óptima está en dólares (${figure})`);
+  });
+
+  await scenario(browser, baseUrl, name('valores por defecto en celular'), mobile, async page => {
+    await calculate(page);
+  });
+
+  await scenario(browser, baseUrl, name('monto escrito con punto de miles'), desktop, async page => {
+    await page.fill('#propertyPrice', '200.000');
+    await page.fill('#downPayment', '40.000');
+    await calculate(page);
+    const loan = (await page.textContent('#summaryLoan')).trim();
+    check(loan.startsWith('US$ 160.000'), `el préstamo es de US$ 160.000 (${loan})`);
+  });
+
+  await scenario(browser, baseUrl, name('préstamo en UI con banco'), desktop, async page => {
+    await page.click('label[for="currencyUI"]');
+    const status = (await page.textContent('#uiStatus')).trim();
+    check(!expectBcu || status.includes('BCU al'), `la UI viene del BCU (${status})`);
+    check(!expectBcu || (await page.textContent('#rateStatus')).includes('BCU al'), 'el dólar viene del BCU');
+    await page.selectOption('#bankSelect', 'bhu');
+    const figure = await calculate(page);
+    check(/^UI /.test(figure), `la cuota óptima está en UI (${figure})`);
+  });
+
+  await scenario(browser, baseUrl, name('falta un dato'), desktop, async page => {
+    await page.fill('#propertyPrice', '');
+    await page.click('#btnCalcular');
+    const hint = (await page.textContent('#formHint')).trim();
+    check(hint.includes('Precio de la propiedad'), `avisa qué dato falta ("${hint}")`);
+  });
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const target = args.find(a => !a.startsWith('--')) || '.';
   const expectBcu = args.includes('--bcu');
+  // Chromium es Chrome y Edge, WebKit es Safari (iPhone y Mac), Firefox es Firefox.
+  const engines = (process.env.E2E_BROWSERS || 'chromium,webkit,firefox').split(',');
   let server = null;
   let baseUrl = target.replace(/\/$/, '');
   if (!/^https?:\/\//.test(target)) {
     server = await serve(path.resolve(target));
     baseUrl = `http://127.0.0.1:${server.address().port}`;
   }
-  console.log(`Probando ${baseUrl}`);
+  console.log(`Probando ${baseUrl} en ${engines.join(', ')}`);
 
-  const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
-  const desktop = { viewport: { width: 1280, height: 900 } };
-  const mobile = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
+  const failures = [];
   try {
-    await scenario(browser, baseUrl, 'valores por defecto en computadora', desktop, async page => {
-      check(await page.inputValue('#propertyPrice') !== '', 'el precio viene cargado');
-      check(await page.isEnabled('#btnCalcular'), 'el botón Calcular está habilitado');
-      check(await page.evaluate(() => typeof window.Chart === 'function'), 'cargó Chart.js');
-      const figure = await calculate(page);
-      check(/US\$/.test(figure), `la cuota óptima está en dólares (${figure})`);
-    });
-
-    await scenario(browser, baseUrl, 'valores por defecto en celular', mobile, async page => {
-      await calculate(page);
-    });
-
-    await scenario(browser, baseUrl, 'monto escrito con punto de miles', desktop, async page => {
-      await page.fill('#propertyPrice', '200.000');
-      await page.fill('#downPayment', '40.000');
-      await calculate(page);
-      const loan = (await page.textContent('#summaryLoan')).trim();
-      check(loan.startsWith('US$ 160.000'), `el préstamo es de US$ 160.000 (${loan})`);
-    });
-
-    await scenario(browser, baseUrl, 'préstamo en UI con banco', desktop, async page => {
-      await page.click('label[for="currencyUI"]');
-      const status = (await page.textContent('#uiStatus')).trim();
-      check(!expectBcu || status.includes('BCU al'), `la UI viene del BCU (${status})`);
-      check(!expectBcu || (await page.textContent('#rateStatus')).includes('BCU al'), 'el dólar viene del BCU');
-      await page.selectOption('#bankSelect', 'bhu');
-      const figure = await calculate(page);
-      check(/^UI /.test(figure), `la cuota óptima está en UI (${figure})`);
-    });
-
-    await scenario(browser, baseUrl, 'falta un dato', desktop, async page => {
-      await page.fill('#propertyPrice', '');
-      await page.click('#btnCalcular');
-      const hint = (await page.textContent('#formHint')).trim();
-      check(hint.includes('Precio de la propiedad'), `avisa qué dato falta ("${hint}")`);
-    });
-    console.log('Todo bien.');
+    for (const engine of engines) {
+      const options = engine === 'chromium' && process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {};
+      const browser = await playwright[engine].launch(options);
+      try {
+        await runScenarios(browser, engine, baseUrl, expectBcu);
+      } catch (err) {
+        console.error(`\n✗ ${engine}: ${err.message}\n`);
+        failures.push(engine);
+      } finally {
+        await browser.close();
+      }
+    }
   } finally {
-    await browser.close();
     if (server) server.close();
   }
+  if (failures.length) throw new Error(`falló en ${failures.join(', ')}`);
+  console.log('Todo bien.');
 }
 
 main().catch(err => {
