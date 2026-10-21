@@ -50,26 +50,78 @@ jobs:
       - run: npm ci
       - run: npm test
 
-  deploy:
-    if: github.event_name != 'pull_request'
+  # Arma el sitio tal como se publica y lo prueba en un navegador real antes de
+  # publicar. Si la prueba falla, no se publica.
+  build:
     needs: [test, test-backend]
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - name: Armar el sitio
         run: mkdir _site && cp -r index.html financiamiento.html 404.html robots.txt sitemap.xml site.webmanifest CNAME css js img _site/
       - name: Bajar dólar y UI del BCU
+        id: bcu
         continue-on-error: true
         run: node scripts/cotizaciones.js _site/data/cotizaciones.json
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Probar el simulador en el navegador
+        run: node scripts/e2e.js _site ${{ steps.bcu.outcome == 'success' && '--bcu' || '' }}
+      - name: Guardar capturas si falló
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-e2e
+          path: e2e-capturas/
+      - if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Después de publicar, la misma prueba contra compracasasuy.com. En un PR solo
+  # informa cómo está el sitio publicado, sin frenar el PR.
+  verificar-sitio:
+    needs: [deploy]
+    if: always() && (needs.deploy.result == 'success' || github.event_name == 'pull_request')
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Probar compracasasuy.com
+        run: |
+          # GitHub Pages puede tardar un poco en servir la versión nueva.
+          for intento in 1 2 3; do
+            node scripts/e2e.js https://compracasasuy.com --bcu && exit 0
+            echo "Falló el intento $intento; reintento en 60 s"
+            sleep 60
+          done
+          exit 1
+      - name: Guardar capturas si falló
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-sitio
+          path: e2e-capturas/
