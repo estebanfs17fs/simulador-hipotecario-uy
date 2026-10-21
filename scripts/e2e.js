@@ -6,7 +6,8 @@
  *   node scripts/e2e.js _site                       → sirve la carpeta y la prueba
  *   node scripts/e2e.js https://compracasasuy.com   → prueba el sitio publicado
  *
- * Opciones: --bcu exige que el dólar y la UI vengan del BCU.
+ * Opciones: --bcu exige que el dólar y la UI vengan del BCU. Con la variable
+ * E2E_VERSION=<commit> exige que la página publicada sea la de ese commit.
  * Si falla guarda capturas en e2e-capturas/ para ver qué pasó.
  */
 const fs = require('fs');
@@ -87,6 +88,8 @@ async function runScenarios(browser, engine, baseUrl, expectBcu) {
   const name = text => `${engine}: ${text}`;
 
   await scenario(browser, baseUrl, name('valores por defecto en computadora'), desktop, async page => {
+    const version = process.env.E2E_VERSION;
+    if (version) check((await page.content()).includes(`?v=${version}`), `el sitio sirve la versión ${version.slice(0, 7)}`);
     check(await page.inputValue('#propertyPrice') !== '', 'el precio viene cargado');
     check(await page.isEnabled('#btnCalcular'), 'el botón Calcular está habilitado');
     check(await page.evaluate(() => typeof window.Chart === 'function'), 'cargó Chart.js');

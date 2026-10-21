@@ -65,6 +65,10 @@ jobs:
       - run: npx playwright install --with-deps chromium webkit firefox
       - name: Armar el sitio
         run: mkdir _site && cp -r index.html financiamiento.html 404.html robots.txt sitemap.xml site.webmanifest CNAME css js img _site/
+      # Cada publicación pide los JS y CSS con otra URL, así ningún navegador
+      # mezcla una página nueva con archivos viejos guardados en caché.
+      - name: Evitar archivos viejos en caché
+        run: sed -i -E 's#(src|href)="(js|css)/([^"?]+)"#\1="\2/\3?v=${{ github.sha }}"#g' _site/*.html
       - name: Bajar dólar y UI del BCU
         id: bcu
         continue-on-error: true
@@ -111,6 +115,8 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium webkit firefox
       - name: Probar compracasasuy.com
+        env:
+          E2E_VERSION: ${{ github.event_name != 'pull_request' && github.sha || '' }}
         run: |
           # GitHub Pages puede tardar un poco en servir la versión nueva.
           for intento in 1 2 3; do
