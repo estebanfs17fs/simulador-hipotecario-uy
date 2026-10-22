@@ -428,7 +428,40 @@ section > h2.h5, .card-body > h2.h5 { font-size: 1rem; font-weight: 600 !importa
   vertical-align: top;
 }
 
-.bank-card { box-shadow: none; }
+.bank-card {
+  box-shadow: none;
+  border-top: 3px solid var(--border);  /* el color de cada banco va en línea */
+}
+
+/* Ícono de cada banco: su color de marca con la sigla */
+.bank-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+  font-size: .625rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.01em;
+  vertical-align: middle;
+}
+
+.bank-logo-long { font-size: .5rem; }
+.bank-logo-sm { width: 1.125rem; height: 1.125rem; font-size: .5rem; border-radius: 3px; }
+.bank-logo-sm.bank-logo-long { font-size: .375rem; }
+.bank-logo-lg { width: 2rem; height: 2rem; font-size: .75rem; border-radius: 6px; }
+.bank-logo-lg.bank-logo-long { font-size: .625rem; }
+
+.bank-name {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.rate-chip.bank-name { gap: .35rem; }
 
 .tips-list li + li {
   margin-top: .5rem;

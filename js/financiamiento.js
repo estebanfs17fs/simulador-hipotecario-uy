@@ -72,7 +72,7 @@ function renderComparison() {
   const minCuota = rows[0]?.disponible ? rows[0].cuota : null;
   const isBest = r => r.disponible && r.cuota - minCuota < 0.005;
   tbody.innerHTML = rows.map(r => {
-    const name = `<strong>${escapeHtml(r.banco.nombre)}</strong>`;
+    const name = `<span class="bank-name">${bankLogo(r.banco)}<strong>${escapeHtml(r.banco.nombre)}</strong></span>`;
     if (!r.disponible) {
       return `<tr class="text-muted"><td>${name}</td><td colspan="4" class="small">${escapeHtml(r.motivo)}</td></tr>`;
     }
@@ -109,7 +109,7 @@ function renderRatesTable() {
       const oferta = banco.monedas[moneda];
       const masIva = oferta.tramos.some(t => t.masIva);
       const bankCell = i === 0
-        ? `<th rowspan="${monedas.length}" scope="rowgroup">${escapeHtml(banco.nombre)}<div class="small fw-normal text-muted">${escapeHtml(banco.tipo)}</div></th>`
+        ? `<th rowspan="${monedas.length}" scope="rowgroup"><span class="bank-name">${bankLogo(banco)}${escapeHtml(banco.nombre)}</span><div class="small fw-normal text-muted">${escapeHtml(banco.tipo)}</div></th>`
         : '';
       rows.push(`<tr>
         ${bankCell}
@@ -136,10 +136,10 @@ function renderBankCards() {
       ? `<a href="${banco.url}" target="_blank" rel="noopener" class="small" data-track="sitio-del-banco/${banco.id}">Ver en el sitio del banco</a>`
       : '';
     return `<div class="col-md-6 col-xl-4" id="banco-${banco.id}">
-      <div class="card h-100 bank-card">
+      <div class="card h-100 bank-card" style="border-top-color:${banco.marca.color}">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start mb-2">
-            <h3 class="h6 fw-bold mb-0">${escapeHtml(banco.nombreLargo)}</h3>
+            <h3 class="h6 fw-bold mb-0 bank-name">${bankLogo(banco, 'lg')}${escapeHtml(banco.nombreLargo)}</h3>
             <span class="badge ${banco.tipo === 'Público' ? 'text-bg-primary' : 'text-bg-secondary'}">${escapeHtml(banco.tipo)}</span>
           </div>
           <div class="mb-3">${tasas}</div>
