@@ -117,7 +117,7 @@ function syncBank(v) {
   const loan = v.price - v.downPayment;
   const pct = maxFinancingPct(oferta, v.price, loan);
   const published = maxPublishedYears(oferta);
-  bankInfo.innerHTML = `${escapeText(banco.nombre)} acepta plazos de ${oferta.plazoMin ?? 1} a ${oferta.plazoMax} años` +
+  bankInfo.innerHTML = `${bankLogo(banco, 'sm')} ${escapeText(banco.nombre)} acepta plazos de ${oferta.plazoMin ?? 1} a ${oferta.plazoMax} años` +
     (published < oferta.plazoMax ? ` (publica tasa hasta ${published})` : '') +
     ` y financia hasta el ${pct}% del precio. ` +
     `<a href="financiamiento.html#banco-${banco.id}" data-track="ver-condiciones/${banco.id}">Ver condiciones</a>`;
@@ -152,7 +152,7 @@ function renderRatesTeaser() {
   const list = document.getElementById('ratesTeaserList');
   if (!list) return;
   list.innerHTML = BANCOS.map(b =>
-    `<span class="rate-chip"><strong>${escapeText(b.nombre)}</strong> UI ${formatTea(lowestRate(b, 'UI'))}</span>`
+    `<span class="rate-chip bank-name">${bankLogo(b, 'sm')}<strong>${escapeText(b.nombre)}</strong> UI ${formatTea(lowestRate(b, 'UI'))}</span>`
   ).join('');
 }
 
@@ -169,7 +169,7 @@ function renderBankCompare(principalUSD, years, currency, xRate) {
 
   document.getElementById('bankCompareBody').innerHTML = rows.map(r => {
     const isSelected = selected && selected.id === r.banco.id;
-    const name = `<strong>${escapeText(r.banco.nombre)}</strong>${isSelected ? ' <span class="badge text-bg-primary">Elegido</span>' : ''}`;
+    const name = `<span class="bank-name">${bankLogo(r.banco)}<strong>${escapeText(r.banco.nombre)}</strong></span>${isSelected ? ' <span class="badge text-bg-primary">Elegido</span>' : ''}`;
     if (!r.disponible) {
       return `<tr class="text-muted"><td>${name}</td><td colspan="4" class="small">${escapeText(r.motivo)}</td></tr>`;
     }

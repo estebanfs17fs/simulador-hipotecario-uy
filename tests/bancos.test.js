@@ -6,6 +6,7 @@ const {
   findTier,
   compareLoans,
   lowestRate,
+  bankLogo,
   findBank,
   maxFinancingPct,
   validateBankLoan,
@@ -163,5 +164,24 @@ describe('compareLoans con límites del banco', () => {
     const rows = compareLoans(25000, 2, 'UI');
     expect(rows.find(r => r.banco.id === 'santander').motivo).toMatch(/Plazo mínimo 3/);
     expect(rows.find(r => r.banco.id === 'btg').motivo).toMatch(/desde US\$ 30\.000/);
+  });
+});
+
+describe('marca de cada banco', () => {
+  test('cada banco tiene color y sigla para su ícono', () => {
+    BANCOS.forEach(b => {
+      expect(b.marca.color).toMatch(/^#[0-9a-f]{6}$/);
+      expect(b.marca.sigla.length).toBeGreaterThan(0);
+    });
+  });
+  test('los colores no se repiten', () => {
+    const colores = BANCOS.map(b => b.marca.color);
+    expect(new Set(colores).size).toBe(colores.length);
+  });
+  test('bankLogo pinta el color y la sigla, oculto para lectores de pantalla', () => {
+    const html = bankLogo(findBank('bhu'));
+    expect(html).toContain('background:#00529b');
+    expect(html).toContain('>BHU<');
+    expect(html).toContain('aria-hidden="true"');
   });
 });

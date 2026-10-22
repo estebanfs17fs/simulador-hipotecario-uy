@@ -14,6 +14,8 @@ const CONSULTADO = '15/10/2026';
  * Un tramo de tasa aplica si el plazo es <= hastaAnios
  * y el monto (equivalente en US$) está entre montoMinUSD y montoMaxUSD.
  * `masIva`: la tasa publicada no incluye el IVA sobre intereses.
+ * `marca`: color de la marca del banco y la sigla de su ícono (`texto` es el
+ * color de la sigla si no es blanco; `llama` dibuja la llama de Santander).
  */
 const BANCOS = [
   {
@@ -21,6 +23,7 @@ const BANCOS = [
     nombre: 'BHU',
     nombreLargo: 'Banco Hipotecario del Uruguay',
     tipo: 'Público',
+    marca: { color: '#00529b', sigla: 'BHU' },
     url: 'https://www.bhu.com.uy',
     monedas: {
       UI: {
@@ -55,6 +58,7 @@ const BANCOS = [
     nombre: 'BBVA',
     nombreLargo: 'BBVA Uruguay',
     tipo: 'Privado',
+    marca: { color: '#001391', sigla: 'BBVA' },
     url: 'https://www.bbva.com.uy/personas/productos/prestamos/hipotecario/hipotecario.html',
     monedas: {
       UI: {
@@ -115,6 +119,7 @@ const BANCOS = [
     nombre: 'Santander',
     nombreLargo: 'Banco Santander Uruguay',
     tipo: 'Privado',
+    marca: { color: '#ec0000', sigla: 'S', llama: true },
     url: 'https://www.santander.com.uy/prestamo-hipotecario',
     monedas: {
       UI: {
@@ -163,6 +168,7 @@ const BANCOS = [
     nombre: 'Itaú',
     nombreLargo: 'Banco Itaú Uruguay',
     tipo: 'Privado',
+    marca: { color: '#ec7000', texto: '#002e8a', sigla: 'itaú' },
     url: 'https://www.itau.com.uy/inst/prestamos-hipotecarios.html',
     monedas: {
       UI: {
@@ -203,6 +209,7 @@ const BANCOS = [
     nombre: 'Scotiabank',
     nombreLargo: 'Scotiabank Uruguay',
     tipo: 'Privado',
+    marca: { color: '#ec111a', sigla: 'Sb' },
     url: 'https://www.scotiabank.com.uy/Personas/Prestamos/Productos/prestamoinmobiliario/prestamoinmobiliario',
     monedas: {
       UI: {
@@ -245,6 +252,7 @@ const BANCOS = [
     nombre: 'BTG Pactual',
     nombreLargo: 'BTG Pactual Uruguay (ex HSBC)',
     tipo: 'Privado',
+    marca: { color: '#0b2341', sigla: 'BTG' },
     url: null,
     monedas: {
       UI: {
@@ -388,6 +396,23 @@ function validateBankLoan(banco, { currency, price, downPayment, minYears, maxYe
   return errors;
 }
 
+// Llama de Santander, dibujada en un cuadro de 24 × 24.
+const LLAMA_SVG = '<svg viewBox="0 0 24 24" width="70%" height="70%" fill="currentColor" aria-hidden="true">' +
+  '<path d="M12.6 2c.4 2.6 2.4 4.1 3.9 6 1.6 2 2.3 4 2 6.2-.4 3.8-3.4 6.8-6.6 6.8-3.6 0-6.5-2.7-6.5-6.4 0-2.6 1.4-4.4 3-5.8-.1 1.6.4 2.9 1.5 3.6-.4-3.4 1-6.4 2.7-10.4z"/></svg>';
+
+/**
+ * Ícono del banco: un cuadro con su color de marca y su sigla. Es decorativo
+ * (aria-hidden), así que va siempre junto al nombre del banco.
+ */
+function bankLogo(banco, size = '') {
+  const m = banco.marca;
+  if (!m) return '';
+  const contenido = m.llama ? LLAMA_SVG : m.sigla;
+  const largo = !m.llama && m.sigla.length > 3 ? ' bank-logo-long' : '';
+  return `<span class="bank-logo${size ? ` bank-logo-${size}` : ''}${largo}" aria-hidden="true" ` +
+    `style="background:${m.color};color:${m.texto ?? '#fff'}">${contenido}</span>`;
+}
+
 /** Tasa más baja publicada por un banco en una moneda, o null. */
 function lowestRate(banco, moneda) {
   const oferta = banco.monedas[moneda];
@@ -405,6 +430,7 @@ if (typeof module !== 'undefined' && module.exports) {
     findTier,
     compareLoans,
     lowestRate,
+    bankLogo,
     findBank,
     maxFinancingPct,
     validateBankLoan,
